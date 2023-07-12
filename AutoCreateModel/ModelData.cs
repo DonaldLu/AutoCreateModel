@@ -56,11 +56,11 @@ namespace AutoCreateModel
     // Json
     public class JsonData
     {
-        public List<AccessibleData> AccessibleDataList { get; set; } // 無障礙廁所
-        public List<BreastfeedingData> BreastfeedingDataList { get; set; } // 哺集乳室
-        public List<FamilyData> FamilyDataList { get; set; } // 親子廁所
-        public List<JanitorRoomData> JanitorRoomDataList { get; set; } // 清潔人員休息室
-        public List<ManData> ManDataList { get; set; } // 男廁
-        public List<WomanData> WomanDataList { get; set; } // 女廁
+        public List<AccessibleData> AccessibleDataList = new List<AccessibleData>(); // 無障礙廁所
+        public List<BreastfeedingData> BreastfeedingDataList = new List<BreastfeedingData>(); // 哺集乳室
+        public List<FamilyData> FamilyDataList = new List<FamilyData>(); // 親子廁所
+        public List<JanitorRoomData> JanitorRoomDataList = new List<JanitorRoomData>(); // 清潔人員休息室
+        public List<ManData> ManDataList = new List<ManData>(); // 男廁
+        public List<WomanData> WomanDataList = new List<WomanData>(); // 女廁
     }
 }

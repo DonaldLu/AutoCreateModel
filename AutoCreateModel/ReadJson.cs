@@ -14,32 +14,40 @@ namespace AutoCreateModel
             string[] files = Directory.GetFiles(folderPath);
             foreach (string file in files)
             {
-                using (StreamReader r = new StreamReader(file))
+                if (File.Exists(file))
                 {
-                    string json = r.ReadToEnd();
-                    if (File.Exists(file) && Path.GetFileName(file).Equals("AccessibleData.json"))
+                    string[] allLines = File.ReadAllLines(file);
+                    foreach (string line in allLines)
                     {
-                        jsonData.AccessibleDataList = JsonConvert.DeserializeObject<List<AccessibleData>>(json);
-                    }
-                    else if (File.Exists(file) && Path.GetFileName(file).Equals("BreastfeedingData.json"))
-                    {
-                        jsonData.BreastfeedingDataList = JsonConvert.DeserializeObject<List<BreastfeedingData>>(json);
-                    }
-                    else if (File.Exists(file) && Path.GetFileName(file).Equals("FamilyData.json"))
-                    {
-                        jsonData.FamilyDataList = JsonConvert.DeserializeObject<List<FamilyData>>(json);
-                    }
-                    else if (File.Exists(file) && Path.GetFileName(file).Equals("JanitorRoomData.json"))
-                    {
-                        jsonData.JanitorRoomDataList = JsonConvert.DeserializeObject<List<JanitorRoomData>>(json);
-                    }
-                    else if (File.Exists(file) && Path.GetFileName(file).Equals("ManData.json"))
-                    {
-                        jsonData.ManDataList = JsonConvert.DeserializeObject<List<ManData>>(json);
-                    }
-                    else if (File.Exists(file) && Path.GetFileName(file).Equals("WomanData.json"))
-                    {
-                        jsonData.WomanDataList = JsonConvert.DeserializeObject<List<WomanData>>(json);
+                        switch (Path.GetFileName(file))
+                        {
+                            case "AccessibleData.json": // 無障礙廁所
+                                List<AccessibleData> accessibleData = JsonConvert.DeserializeObject<List<AccessibleData>>(line);
+                                jsonData.AccessibleDataList.Add(accessibleData[0]);
+                                break;
+                            case "BreastfeedingData.json": // 哺集乳室
+                                List<BreastfeedingData> breastfeedingData = JsonConvert.DeserializeObject<List<BreastfeedingData>>(line);
+                                jsonData.BreastfeedingDataList.Add(breastfeedingData[0]);
+                                break;
+                            case "FamilyData.json": // 親子廁所
+                                List<FamilyData> familyData = JsonConvert.DeserializeObject<List<FamilyData>>(line);
+                                jsonData.FamilyDataList.Add(familyData[0]);
+                                break;
+                            case "JanitorRoomData.json": // 清潔人員休息室
+                                List<JanitorRoomData> janitorRoomData = JsonConvert.DeserializeObject<List<JanitorRoomData>>(line);
+                                jsonData.JanitorRoomDataList.Add(janitorRoomData[0]);
+                                break;
+                            case "ManData.json": // 男廁
+                                List<ManData> manData = JsonConvert.DeserializeObject<List<ManData>>(line);
+                                jsonData.ManDataList.Add(manData[0]);
+                                break;
+                            case "WomanData.json": // 女廁
+                                List<WomanData> womanData = JsonConvert.DeserializeObject<List<WomanData>>(line);
+                                jsonData.WomanDataList.Add(womanData[0]);
+                                break;
+                            default:
+                                break;
+                        }
                     }
                 }
             }
