@@ -21,12 +21,13 @@ namespace AutoCreateModel
         // 需要載入的廁所群組族群
         public class ToiletGroup
         {
-            public static string toilet = "MRT_廁所群組(一般坐式)(SinoBIM-第2版)";
-            public static string sink = "MRT_洗手台群組(SinoBIM-第3版)";
-            public static string urinal = "MRT_小便斗群組(SinoBIM-第1版)";
-            public static string familyRestroom = "MRT_親子廁所(SinoBIM-第1版)";
-            public static string accessibleRestroom = "MRT_無障礙廁所(SinoBIM-第1版)";
+            public static string toilet = "MRT_廁所群組(一般坐式)(SinoBIM-第";
+            public static string washbasin = "MRT_洗手台群組(SinoBIM-第";
+            public static string urinal = "MRT_小便斗群組(SinoBIM-第";
+            public static string familyRestroom = "MRT_親子廁所(SinoBIM-第";
+            public static string accessibleRestroom = "MRT_無障礙廁所(SinoBIM-第";
         }
+        public List<string> noFamilySymbols = new List<string>();
         public double prjNS = 0.0; // 專案基準點：N/S
         public double prjWE = 0.0; // 專案基準點：W/E
         public double angle = 0.0; // 旋轉角度
@@ -35,7 +36,6 @@ namespace AutoCreateModel
             UIDocument uidoc = uiapp.ActiveUIDocument;
             Document doc = uidoc.Document;
             uiapp.Application.FailuresProcessing += FaliureProcessor; // 關閉警示視窗
-
             string folderPath = ReadJsonForm.folderPath; // Json檔案資料夾路徑
             JsonData jsonData = ReadJson.ReadJsonFile(folderPath);
 
@@ -50,11 +50,27 @@ namespace AutoCreateModel
             Tuple<List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>> restroomElems = CreateRestroom(doc, jsonData, levelElevList); // 建立廁所模型
             EditParameter(doc, restroomElems, jsonData); // 排列元件組合
             transGroup.Assimilate();
+
+            // 有族群未載入無法建立元件, 則提醒
+            noFamilySymbols = noFamilySymbols.Distinct().ToList();
+            string error = "";
+            if (noFamilySymbols.Count > 0)
+            {
+                int i = 1;
+                foreach(string noFamilySymbol in noFamilySymbols)
+                {
+                    error += "\n" + i + ". " + noFamilySymbol;
+                    i++;
+                }
+            }
+            if(error != "")
+            {
+                TaskDialog.Show("Error", "以下元件未載入無法建立：\n" + error);
+            }
         }
         // 查詢專案基準點
         private void ProjectBasePoint(Document doc)
         {
-
             // 專案基準點, 暫定距離原點最大偏移的為BasePoint
             List<BasePoint> allPrjLocations = new FilteredElementCollector(doc).OfClass(typeof(BasePoint)).WhereElementIsNotElementType().Cast<BasePoint>().ToList();
             List<BasePoint> prjLocations = allPrjLocations.Where(x => x.get_Parameter(BuiltInParameter.BASEPOINT_ANGLETON_PARAM) != null).ToList();
@@ -75,13 +91,54 @@ namespace AutoCreateModel
 
             }
         }
-        // 取得族群內廁所所需的Family
+        // 取得族群內廁所所需的Family, 並優先使用已載入的最新版
         private List<FamilySymbol> GetFamilySymbols(Document doc)
         {
-            List<string> toiletGroup = new List<string>() { ToiletGroup.toilet, ToiletGroup.sink, ToiletGroup.urinal, ToiletGroup.familyRestroom, ToiletGroup.accessibleRestroom };
+            List<FamilySymbol> familySymbols = new List<FamilySymbol>();
+            List<string> toiletGroups = new List<string>() { ToiletGroup.toilet, ToiletGroup.washbasin, ToiletGroup.urinal, ToiletGroup.familyRestroom, ToiletGroup.accessibleRestroom };
             List<FamilySymbol> familySymbolList = new FilteredElementCollector(doc).OfClass(typeof(FamilySymbol)).Cast<FamilySymbol>().ToList();
-            familySymbolList = familySymbolList.Where(x => toiletGroup.Contains(x.Family.Name)).Distinct().ToList(); // 篩選出廁所群組需要使用的族群
-            return familySymbolList;
+            // 篩選出廁所群組需要使用的族群
+            List<FamilySymbol> saveFamilySymbols = new List<FamilySymbol>();
+            foreach (string toiletGroup in toiletGroups)
+            {
+                foreach(FamilySymbol saveFamilySymbol in familySymbolList.Where(x => x.Family.Name.Contains(toiletGroup)).ToList())
+                {
+                    saveFamilySymbols.Add(saveFamilySymbol);
+                }
+            }
+            saveFamilySymbols = saveFamilySymbols.OrderBy(x => x.Family.Name).ToList(); // 排序
+            // 解析版次
+            foreach (string toiletGroup in toiletGroups)
+            {
+                List<string> familyNames = saveFamilySymbols.Where(x => x.Family.Name.Contains(toiletGroup)).Select(x => x.Family.Name).ToList();
+                // 取得載入的所有版本
+                List<int> versions = new List<int>();
+                foreach(string familyName in familyNames)
+                {
+                    string removeFamilyName = familyName.Remove(0, toiletGroup.Length);
+                    int versionIndex = removeFamilyName.IndexOf('版');
+                    try
+                    {
+                        int version = Convert.ToInt32(removeFamilyName.Substring(0, versionIndex));
+                        versions.Add(version);
+                    }
+                    catch(Exception ex)
+                    {
+
+                    }
+                }
+                // 找到最新的版本並加入到familySymbols
+                int newest = versions.OrderByDescending(x => x).FirstOrDefault();
+                if(newest != 0)
+                {
+                    FamilySymbol addSymbolFamily = saveFamilySymbols.Where(x => x.Family.Name.Contains(toiletGroup + newest.ToString())).FirstOrDefault();
+                    if (addSymbolFamily != null)
+                    {
+                        familySymbols.Add(addSymbolFamily);
+                    }
+                }
+            }
+            return familySymbols;
         }
         // 建立廁所模型
         private Tuple<List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>> CreateRestroom(Document doc, JsonData jsonData, List<LevelElevation> levelElevList)
@@ -118,7 +175,7 @@ namespace AutoCreateModel
         {
             List<FamilyInstance> manRestrooms = new List<FamilyInstance>();
             FamilySymbol toilet = familySymbolList.Where(x => x.FamilyName.Contains(ToiletGroup.toilet)).FirstOrDefault();
-            FamilySymbol washbasin = familySymbolList.Where(x => x.FamilyName.Contains(ToiletGroup.sink)).FirstOrDefault();
+            FamilySymbol washbasin = familySymbolList.Where(x => x.FamilyName.Contains(ToiletGroup.washbasin)).FirstOrDefault();
             FamilySymbol urinal = familySymbolList.Where(x => x.FamilyName.Contains(ToiletGroup.urinal)).FirstOrDefault();
 
             foreach (ManData manData in jsonData.ManDataList)
@@ -137,10 +194,15 @@ namespace AutoCreateModel
                     }
                     manRestrooms.Add(instance);
                 }
+                else
+                {
+                    string noFamilySymbol = ToiletGroup.toilet.Replace("(SinoBIM-第", "");
+                    noFamilySymbols.Add(noFamilySymbol);
+                }
                 if (washbasin != null)
                 {
                     FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, washbasin, StructuralType.NonStructural);
-                    if (instance.Symbol.FamilyName.Contains(ToiletGroup.sink))
+                    if (instance.Symbol.FamilyName.Contains(ToiletGroup.washbasin))
                     {
                         Parameter counts = instance.LookupParameter("兒童洗面盆數量");
                         if (manData.Washbasin_Count > 1)
@@ -157,6 +219,11 @@ namespace AutoCreateModel
                         }
                     }
                     manRestrooms.Add(instance);
+                }
+                else
+                {
+                    string noFamilySymbol = ToiletGroup.washbasin.Replace("(SinoBIM-第", "");
+                    noFamilySymbols.Add(noFamilySymbol);
                 }
                 if (urinal != null)
                 {
@@ -179,6 +246,11 @@ namespace AutoCreateModel
                     }
                     manRestrooms.Add(instance);
                 }
+                else
+                {
+                    string noFamilySymbol = ToiletGroup.urinal.Replace("(SinoBIM-第", "");
+                    noFamilySymbols.Add(noFamilySymbol);
+                }
             }
             return manRestrooms;
         }
@@ -187,7 +259,7 @@ namespace AutoCreateModel
         {
             List<FamilyInstance> womanRestrooms = new List<FamilyInstance>();
             FamilySymbol toilet = familySymbolList.Where(x => x.FamilyName.Contains(ToiletGroup.toilet)).FirstOrDefault();
-            FamilySymbol washbasin = familySymbolList.Where(x => x.FamilyName.Contains(ToiletGroup.sink)).FirstOrDefault();
+            FamilySymbol washbasin = familySymbolList.Where(x => x.FamilyName.Contains(ToiletGroup.washbasin)).FirstOrDefault();
 
             foreach (WomanData womanData in jsonData.WomanDataList)
             {
@@ -210,12 +282,35 @@ namespace AutoCreateModel
                             }
                             womanRestrooms.Add(instance);
                         }
+                        else
+                        {
+                            string noFamilySymbol = ToiletGroup.toilet.Replace("(SinoBIM-第", "");
+                            noFamilySymbols.Add(noFamilySymbol);
+                        }
+                    }
+                }
+                else
+                {
+                    if (toilet != null)
+                    {
+                        FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, toilet, StructuralType.NonStructural);
+                        if (instance.Symbol.FamilyName.Contains(ToiletGroup.toilet))
+                        {
+                            Parameter counts = instance.LookupParameter("一般坐式數量");
+                            counts.Set(womanData.Toilet_Count);
+                        }
+                        womanRestrooms.Add(instance);
+                    }
+                    else
+                    {
+                        string noFamilySymbol = ToiletGroup.toilet.Replace("(SinoBIM-第", "");
+                        noFamilySymbols.Add(noFamilySymbol);
                     }
                 }
                 if (washbasin != null)
                 {
                     FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, washbasin, StructuralType.NonStructural);
-                    if (instance.Symbol.FamilyName.Contains(ToiletGroup.sink))
+                    if (instance.Symbol.FamilyName.Contains(ToiletGroup.washbasin))
                     {
                         Parameter counts = instance.LookupParameter("兒童洗面盆數量");
                         if (womanData.Washbasin_Count > 1)
@@ -232,6 +327,11 @@ namespace AutoCreateModel
                         }
                     }
                     womanRestrooms.Add(instance);
+                }
+                else
+                {
+                    string noFamilySymbol = ToiletGroup.washbasin.Replace("(SinoBIM-第", "");
+                    noFamilySymbols.Add(noFamilySymbol);
                 }
             }
             return womanRestrooms;
@@ -252,6 +352,11 @@ namespace AutoCreateModel
                     FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, toilet, StructuralType.NonStructural);
                     familyRestrooms.Add(instance);
                 }
+                else
+                {
+                    string noFamilySymbol = ToiletGroup.familyRestroom.Replace("(SinoBIM-第", "");
+                    noFamilySymbols.Add(noFamilySymbol);
+                }
             }
             return familyRestrooms;
         }
@@ -270,6 +375,11 @@ namespace AutoCreateModel
                 {
                     FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, toilet, StructuralType.NonStructural);
                     accessibleRestrooms.Add(instance);
+                }
+                else
+                {
+                    string noFamilySymbol = ToiletGroup.accessibleRestroom.Replace("(SinoBIM-第", "");
+                    noFamilySymbols.Add(noFamilySymbol);
                 }
             }
             return accessibleRestrooms;
@@ -296,7 +406,7 @@ namespace AutoCreateModel
                 double manRestroomWidth = UnitUtils.ConvertToInternalUnits(manData.Width, DisplayUnitType.DUT_METERS); // 廁所總寬度
 
                 FamilyInstance toilet = manRestroomElems.Where(x => x.Symbol.FamilyName.Contains(ToiletGroup.toilet)).FirstOrDefault();
-                FamilyInstance washbasin = manRestroomElems.Where(x => x.Symbol.FamilyName.Contains(ToiletGroup.sink)).FirstOrDefault();
+                FamilyInstance washbasin = manRestroomElems.Where(x => x.Symbol.FamilyName.Contains(ToiletGroup.washbasin)).FirstOrDefault();
                 FamilyInstance urinal = manRestroomElems.Where(x => x.Symbol.FamilyName.Contains(ToiletGroup.urinal)).FirstOrDefault();
 
                 // MRT_廁所群組(一般坐式)(SinoBIM-第2版)
@@ -422,7 +532,7 @@ namespace AutoCreateModel
 
                 FamilyInstance toilet1 = womanRestroomElems.Where(x => x.Symbol.FamilyName.Contains(ToiletGroup.toilet)).FirstOrDefault();
                 FamilyInstance toilet2 = womanRestroomElems.Where(x => x.Symbol.FamilyName.Contains(ToiletGroup.toilet) && x.Id != toilet1.Id).FirstOrDefault();
-                FamilyInstance washbasin = womanRestroomElems.Where(x => x.Symbol.FamilyName.Contains(ToiletGroup.sink)).FirstOrDefault();
+                FamilyInstance washbasin = womanRestroomElems.Where(x => x.Symbol.FamilyName.Contains(ToiletGroup.washbasin)).FirstOrDefault();
 
                 // toilet1：MRT_廁所群組(一般坐式)(SinoBIM-第2版)
                 double toiletTotalWidth1 = 0.0;
