@@ -26,6 +26,8 @@ namespace AutoCreateModel
             public static string urinal = "MRT_小便斗群組(SinoBIM-第";
             public static string familyRestroom = "MRT_親子廁所(SinoBIM-第";
             public static string accessibleRestroom = "MRT_無障礙廁所(SinoBIM-第";
+            public static string breastfeeding = "MRT_哺集乳室(SinoBIM-第";
+            public static string janitorRoom = "MRT_清潔人員休息室(SinoBIM-第";
         }
         public List<string> noFamilySymbols = new List<string>();
         public double prjNS = 0.0; // 專案基準點：N/S
@@ -47,7 +49,7 @@ namespace AutoCreateModel
 
             TransactionGroup transGroup = new TransactionGroup(doc, "建立廁所模型");
             transGroup.Start();
-            Tuple<List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>> restroomElems = CreateRestroom(doc, jsonData, levelElevList); // 建立廁所模型
+            Tuple<List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>> restroomElems = CreateRestroom(doc, jsonData, levelElevList); // 建立廁所模型
             EditParameter(doc, restroomElems, jsonData); // 排列元件組合
             transGroup.Assimilate();
 
@@ -95,7 +97,7 @@ namespace AutoCreateModel
         private List<FamilySymbol> GetFamilySymbols(Document doc)
         {
             List<FamilySymbol> familySymbols = new List<FamilySymbol>();
-            List<string> toiletGroups = new List<string>() { ToiletGroup.toilet, ToiletGroup.washbasin, ToiletGroup.urinal, ToiletGroup.familyRestroom, ToiletGroup.accessibleRestroom };
+            List<string> toiletGroups = new List<string>() { ToiletGroup.toilet, ToiletGroup.washbasin, ToiletGroup.urinal, ToiletGroup.familyRestroom, ToiletGroup.accessibleRestroom, ToiletGroup.breastfeeding, ToiletGroup.janitorRoom };
             List<FamilySymbol> familySymbolList = new FilteredElementCollector(doc).OfClass(typeof(FamilySymbol)).Cast<FamilySymbol>().ToList();
             // 篩選出廁所群組需要使用的族群
             List<FamilySymbol> saveFamilySymbols = new List<FamilySymbol>();
@@ -141,12 +143,14 @@ namespace AutoCreateModel
             return familySymbols;
         }
         // 建立廁所模型
-        private Tuple<List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>> CreateRestroom(Document doc, JsonData jsonData, List<LevelElevation> levelElevList)
+        private Tuple<List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>> CreateRestroom(Document doc, JsonData jsonData, List<LevelElevation> levelElevList)
         {
             List<FamilyInstance> manRestrooms = new List<FamilyInstance>();
             List<FamilyInstance> womanRestrooms = new List<FamilyInstance>();
             List<FamilyInstance> familyRestrooms = new List<FamilyInstance>();
             List<FamilyInstance> accessibleRestrooms = new List<FamilyInstance>();
+            List<FamilyInstance> breastfeedings = new List<FamilyInstance>();
+            List<FamilyInstance> janitorRooms = new List<FamilyInstance>();
             using (Transaction trans = new Transaction(doc, "放置元件"))
             {
                 trans.Start();
@@ -165,10 +169,12 @@ namespace AutoCreateModel
                 womanRestrooms = CreateWomanRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立女廁元件
                 familyRestrooms = CreateFamilyRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立親子廁所元件
                 accessibleRestrooms = CreateAccessibleRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立無障礙廁所元件
+                breastfeedings = CreateBreastfeedingRoom(doc, jsonData, levelElevation, familySymbolList); // 建立哺集乳室
+                janitorRooms = CreateJanitorRoom(doc, jsonData, levelElevation, familySymbolList); // 建立清潔人員休息室
                 trans.Commit();
             }
 
-            return Tuple.Create(manRestrooms, womanRestrooms, familyRestrooms, accessibleRestrooms);
+            return Tuple.Create(manRestrooms, womanRestrooms, familyRestrooms, accessibleRestrooms, breastfeedings, janitorRooms);
         }
         // 建立男廁元件
         private List<FamilyInstance> CreateManRestroom(Document doc, JsonData jsonData, double levelElevation, List<FamilySymbol> familySymbolList)
@@ -384,8 +390,56 @@ namespace AutoCreateModel
             }
             return accessibleRestrooms;
         }
+        // 建立哺集乳室
+        private List<FamilyInstance> CreateBreastfeedingRoom(Document doc, JsonData jsonData, double levelElevation, List<FamilySymbol> familySymbolList)
+        {
+            List<FamilyInstance> breastfeedings = new List<FamilyInstance>();
+            FamilySymbol toilet = familySymbolList.Where(x => x.FamilyName.Contains(ToiletGroup.breastfeeding)).FirstOrDefault();
+
+            foreach (BreastfeedingData breastfeedingData in jsonData.BreastfeedingDataList)
+            {
+                double x = UnitUtils.ConvertToInternalUnits(breastfeedingData.BreastfeedingRoom_x, DisplayUnitType.DUT_METERS);
+                double y = UnitUtils.ConvertToInternalUnits(breastfeedingData.BreastfeedingRoom_y, DisplayUnitType.DUT_METERS);
+                XYZ xyz = new XYZ(x, y, levelElevation);
+                if (toilet != null)
+                {
+                    FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, toilet, StructuralType.NonStructural);
+                    breastfeedings.Add(instance);
+                }
+                else
+                {
+                    string noFamilySymbol = ToiletGroup.breastfeeding.Replace("(SinoBIM-第", "");
+                    noFamilySymbols.Add(noFamilySymbol);
+                }
+            }
+            return breastfeedings;
+        }
+        // 建立清潔人員休息室
+        private List<FamilyInstance> CreateJanitorRoom(Document doc, JsonData jsonData, double levelElevation, List<FamilySymbol> familySymbolList)
+        {
+            List<FamilyInstance> janitorRooms = new List<FamilyInstance>();
+            FamilySymbol toilet = familySymbolList.Where(x => x.FamilyName.Contains(ToiletGroup.janitorRoom)).FirstOrDefault();
+
+            foreach (JanitorRoomData janitorRoomData in jsonData.JanitorRoomDataList)
+            {
+                double x = UnitUtils.ConvertToInternalUnits(janitorRoomData.JanitorRoom_x, DisplayUnitType.DUT_METERS);
+                double y = UnitUtils.ConvertToInternalUnits(janitorRoomData.JanitorRoom_y, DisplayUnitType.DUT_METERS);
+                XYZ xyz = new XYZ(x, y, levelElevation);
+                if (toilet != null)
+                {
+                    FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, toilet, StructuralType.NonStructural);
+                    janitorRooms.Add(instance);
+                }
+                else
+                {
+                    string noFamilySymbol = ToiletGroup.janitorRoom.Replace("(SinoBIM-第", "");
+                    noFamilySymbols.Add(noFamilySymbol);
+                }
+            }
+            return janitorRooms;
+        }
         // 排列元件組合
-        private void EditParameter(Document doc, Tuple<List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>> restroomElems, JsonData jsonData)
+        private void EditParameter(Document doc, Tuple<List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>, List<FamilyInstance>> restroomElems, JsonData jsonData)
         {
             using (Transaction trans = new Transaction(doc, "組合"))
             {
@@ -394,6 +448,8 @@ namespace AutoCreateModel
                 EditWomanRestroom(doc, restroomElems.Item2, jsonData); // 修改女廁參數
                 EditFamilyRestroom(doc, restroomElems.Item3, jsonData); // 修改親子廁所參數
                 EditAccessibleRestroom(doc, restroomElems.Item4, jsonData); // 修改無障礙廁所參數
+                EditBreastfeedingRoom(doc, restroomElems.Item5, jsonData); // 修改哺集乳室
+                EditJanitorRooms(doc, restroomElems.Item6, jsonData); // 修改清潔人員休息室
                 trans.Commit();
             }
         }
@@ -687,6 +743,50 @@ namespace AutoCreateModel
 
                     // 移除修改過的族群
                     accessibleRestroomElems.Remove(toilet);
+                }
+            }
+        }
+        // 修改哺集乳室
+        private void EditBreastfeedingRoom(Document doc, List<FamilyInstance> breastfeedingsRoomElems, JsonData jsonData)
+        {
+            foreach (BreastfeedingData breastfeedingData in jsonData.BreastfeedingDataList)
+            {
+                double breastfeedingsRoomLength = UnitUtils.ConvertToInternalUnits(breastfeedingData.Length, DisplayUnitType.DUT_METERS); // 廁所總長度
+                double breastfeedingsRoomWidth = UnitUtils.ConvertToInternalUnits(breastfeedingData.Width, DisplayUnitType.DUT_METERS); // 廁所總寬度
+
+                FamilyInstance breastfeeding = breastfeedingsRoomElems.Where(x => x.Symbol.FamilyName.Contains(ToiletGroup.breastfeeding)).FirstOrDefault();
+                // toilet：MRT_哺集乳室(SinoBIM-第1版)
+                if (breastfeeding != null)
+                {
+                    double breastfeedingDepth = breastfeeding.LookupParameter("哺集乳室深度").AsDouble();
+
+                    XYZ offset = new XYZ(0, -breastfeedingDepth, 0);
+                    ElementTransformUtils.MoveElement(doc, breastfeeding.Id, offset);
+
+                    // 移除修改過的族群
+                    breastfeedingsRoomElems.Remove(breastfeeding);
+                }
+            }
+        }
+        // 修改清潔人員休息室
+        private void EditJanitorRooms(Document doc, List<FamilyInstance> janitorRoomsElems, JsonData jsonData)
+        {
+            foreach (JanitorRoomData janitorRoomData in jsonData.JanitorRoomDataList)
+            {
+                double janitorRoomLength = UnitUtils.ConvertToInternalUnits(janitorRoomData.Length, DisplayUnitType.DUT_METERS); // 廁所總長度
+                double janitorRoomWidth = UnitUtils.ConvertToInternalUnits(janitorRoomData.Width, DisplayUnitType.DUT_METERS); // 廁所總寬度
+
+                FamilyInstance janitor = janitorRoomsElems.Where(x => x.Symbol.FamilyName.Contains(ToiletGroup.janitorRoom)).FirstOrDefault();
+                // toilet：MRT_清潔人員休息室(SinoBIM-第1版)
+                if (janitor != null)
+                {
+                    double janitorDepth = janitor.LookupParameter("清潔人員休息室深度").AsDouble();
+
+                    XYZ offset = new XYZ(0, -janitorDepth, 0);
+                    ElementTransformUtils.MoveElement(doc, janitor.Id, offset);
+
+                    // 移除修改過的族群
+                    janitorRoomsElems.Remove(janitor);
                 }
             }
         }
