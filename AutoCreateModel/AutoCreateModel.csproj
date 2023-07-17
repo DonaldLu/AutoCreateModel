@@ -58,7 +58,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CreateMRT.cs" />
-    <Compile Include="CreateToilet.cs" />
+    <Compile Include="CreateRestroom.cs" />
     <Compile Include="FindLevel.cs" />
     <Compile Include="ModelData.cs" />
     <Compile Include="Properties\Resources.Designer.cs">

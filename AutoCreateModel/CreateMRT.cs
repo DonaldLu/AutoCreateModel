@@ -11,7 +11,7 @@ namespace AutoCreateModel
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
-            IExternalEventHandler handler_CreateToilet = new CreateToilet();
+            IExternalEventHandler handler_CreateToilet = new CreateRestroom();
             //ExternalEvent externalEvent_CreateToilet = ExternalEvent.Create(handler_CreateToilet);
             //commandData.Application.Idling += Application_Idling;
             RevitDocument m_connect = new RevitDocument(commandData.Application);
