@@ -7,6 +7,8 @@ namespace AutoCreateModel
 {
     internal class FindLevel
     {
+        // Level_id比對樓層
+        public static Dictionary<int, string> level_id = new Dictionary<int, string>();
         public class LevelElevation
         {
             public string Name { get;set; }
@@ -17,6 +19,8 @@ namespace AutoCreateModel
         // 找到當前視圖的Level相關資訊
         public Tuple<List<LevelElevation>, LevelElevation, double> FindDocViewLevel(Document doc)
         {
+            // Level_id比對樓層
+            level_id.Add(0, "出入口"); level_id.Add(1, "地面層"); level_id.Add(2, "轉折層"); level_id.Add(3, "穿堂層"); level_id.Add(4, "設備層"); level_id.Add(5, "月台層"); level_id.Add(6, "軌道層");
             // 查詢所有Level的高程並排序
             List<Level> levels = new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Levels).WhereElementIsNotElementType().Cast<Level>().ToList();
             List<LevelElevation> levelElevList = new List<LevelElevation>();
