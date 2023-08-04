@@ -3,6 +3,7 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Events;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
+using DocumentFormat.OpenXml.Bibliography;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -426,7 +427,7 @@ namespace AutoCreateModel
                         if (instance.Symbol.FamilyName.Contains(RestroomGroup.toilet))
                         {
                             Parameter counts = instance.LookupParameter("一般坐式數量");
-                            counts.Set(womanData.Toilet_Count);
+                            counts.Set(womanData.Toilet_Count - 2); // 預留一個蹲式、一個拖布盆
                         }
                         womanRestrooms.Add(instance);
                     }
@@ -1138,26 +1139,32 @@ namespace AutoCreateModel
             {
                 FamilyInstance toilet1 = womanRestroomElems.Where(x => x.Symbol.FamilyName.Contains(RestroomGroup.toilet)).FirstOrDefault(); // 坐式馬桶1
                 FamilyInstance toilet2 = womanRestroomElems.Where(x => x.Symbol.FamilyName.Contains(RestroomGroup.toilet) && x.Id != toilet1.Id).FirstOrDefault(); // 坐式馬桶2
-                // 先比對toilet1、toilet2哪個數量高, 將toilet1設置為數量高的
-                FamilyInstance toiletMax = toilet1;
-                FamilyInstance toiletMin = toilet2;
-                int count1 = toilet1.LookupParameter("一般坐式數量").AsInteger();
-                int count2 = toilet2.LookupParameter("一般坐式數量").AsInteger();
-                if (count2 > count1) { toiletMax = toilet2; toiletMin = toilet1; }
-                toilet1 = toiletMax;
-                toilet2 = toiletMin;
+                // 如果toilet2不為null, 先比對toilet1、toilet2哪個數量高, 將toilet1設置為數量高的
+                if(toilet2 != null)
+                {
+                    FamilyInstance toiletMax = toilet1;
+                    FamilyInstance toiletMin = toilet2;
+                    int count1 = toilet1.LookupParameter("一般坐式數量").AsInteger();
+                    int count2 = toilet2.LookupParameter("一般坐式數量").AsInteger();
+                    if (count2 > count1) { toiletMax = toilet2; toiletMin = toilet1; }
+                    toilet1 = toiletMax;
+                    toilet2 = toiletMin;
+                }
                 FamilyInstance toilet_squat = womanRestroomElems.Where(x => x.Symbol.FamilyName.Contains(RestroomGroup.toilet_squat)).FirstOrDefault(); // 蹲式馬桶
                 FamilyInstance mop_basin = womanRestroomElems.Where(x => x.Symbol.FamilyName.Contains(RestroomGroup.mop_basin)).FirstOrDefault(); // 拖布盆間
                 FamilyInstance washbasin1 = womanRestroomElems.Where(x => x.Symbol.FamilyName.Contains(RestroomGroup.washbasin)).FirstOrDefault(); // 洗手台1
                 FamilyInstance washbasin2 = womanRestroomElems.Where(x => x.Symbol.FamilyName.Contains(RestroomGroup.washbasin) && x.Id != washbasin1.Id).FirstOrDefault(); // 洗手台2
-                // 先比對washbasin1、washbasin2哪個數量高, 將washbasin1設置為數量高的
-                FamilyInstance washbasinMax = washbasin1;
-                FamilyInstance washbasinMin = washbasin2;
-                count1 = washbasin1.LookupParameter("洗面盆總數量").AsInteger();
-                count2 = washbasin2.LookupParameter("洗面盆總數量").AsInteger();
-                if (count2 > count1) { washbasinMax = washbasin2; washbasinMin = washbasin1; }
-                washbasin1 = washbasinMax;
-                washbasin2 = washbasinMin;
+                // 如果washbasin2不為null, 先比對washbasin1、washbasin2哪個數量高, 將washbasin1設置為數量高的
+                if(washbasin2 != null)
+                {
+                    FamilyInstance washbasinMax = washbasin1;
+                    FamilyInstance washbasinMin = washbasin2;
+                    int count1 = washbasin1.LookupParameter("洗面盆總數量").AsInteger();
+                    int count2 = washbasin2.LookupParameter("洗面盆總數量").AsInteger();
+                    if (count2 > count1) { washbasinMax = washbasin2; washbasinMin = washbasin1; }
+                    washbasin1 = washbasinMax;
+                    washbasin2 = washbasinMin;
+                }
                 FamilyInstance washbasin_accessible = womanRestroomElems.Where(x => x.Symbol.FamilyName.Contains(RestroomGroup.washbasin_accessible)).FirstOrDefault(); // 無障礙洗手台
 
                 // toilet1：MRT_廁所群組(一般坐式)(SinoBIM-第2版)
@@ -1460,7 +1467,230 @@ namespace AutoCreateModel
                 }
                 else if (womanData.Type.Equals(4) || womanData.Type.Equals(5) || womanData.Type.Equals(6) || womanData.Type.Equals(7))
                 {
-
+                    if (womanData.Rotate_id.Equals(1) || womanData.Rotate_id.Equals(2))
+                    {
+                        // toilet1：MRT_廁所群組(一般坐式)(SinoBIM-第2版)
+                        if (toilet1 != null)
+                        {
+                            XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth, -toiletTotalDepth1, 0);
+                            ElementTransformUtils.MoveElement(doc, toilet1.Id, offset);
+                            womanRestroomElems.Remove(toilet1); // 移除修改過的族群
+                        }
+                        // MRT_廁所群組(蹲式)(SinoBIM-第2版)
+                        if (toilet_squat != null)
+                        {
+                            XYZ offset = new XYZ(mop_basin_TotalWidth, -toilet_squat_TotalDepth, 0);
+                            ElementTransformUtils.MoveElement(doc, toilet_squat.Id, offset);
+                            womanRestroomElems.Remove(toilet_squat); // 移除修改過的族群
+                        }
+                        // MRT_拖布盆間(SinoBIM-第2版)
+                        if (mop_basin != null)
+                        {
+                            XYZ offset = new XYZ(0, -mop_basin_TotalDepth, 0);
+                            ElementTransformUtils.MoveElement(doc, mop_basin.Id, offset);
+                            womanRestroomElems.Remove(mop_basin); // 移除修改過的族群
+                        }
+                        // washbasin1：MRT_洗手台群組(SinoBIM-第3版)
+                        if (washbasin1 != null)
+                        {
+                            if (womanData.Type.Equals(4))
+                            {
+                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth1 + washbasin_accessible_TotalWidth, -washbasinTotalDepth1, 0);
+                                ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
+                            }
+                            else if (womanData.Type.Equals(5))
+                            {
+                                LocationPoint lp = washbasin1.Location as LocationPoint;
+                                Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
+                                double rotation = 2 * Math.PI / 360 * 90; // 轉換角度
+                                ElementTransformUtils.RotateElement(doc, washbasin1.Id, line, rotation);
+                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth1 + washbasinTotalDepth1, -washbasinTotalWidth1, 0);
+                                ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
+                            }
+                            else if (womanData.Type.Equals(6))
+                            {
+                                LocationPoint lp = washbasin1.Location as LocationPoint;
+                                Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
+                                double rotation = 2 * Math.PI / 360 * 90; // 轉換角度
+                                ElementTransformUtils.RotateElement(doc, washbasin1.Id, line, rotation);
+                                XYZ offset = new XYZ(toilet_squat_TotalWidth + toiletTotalWidth1 + washbasinTotalDepth1, -washbasinTotalWidth1, 0);
+                                ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
+                            }
+                            else if (womanData.Type.Equals(7))
+                            {
+                                LocationPoint lp = washbasin1.Location as LocationPoint;
+                                Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
+                                double rotation = 2 * Math.PI / 360 * 90; // 轉換角度
+                                ElementTransformUtils.RotateElement(doc, washbasin1.Id, line, rotation);
+                                XYZ offset = new XYZ(toilet_squat_TotalWidth + toiletTotalWidth1 + washbasinTotalDepth1, -washbasinTotalWidth1, 0);
+                                ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
+                            }
+                            womanRestroomElems.Remove(washbasin1); // 移除修改過的族群
+                        }
+                        // washbasin2：MRT_洗手台群組(SinoBIM-第3版)
+                        if (washbasin2 != null)
+                        {
+                            if (womanData.Type.Equals(5))
+                            {
+                                LocationPoint lp = washbasin2.Location as LocationPoint;
+                                Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
+                                double rotation = 2 * Math.PI / 360 * 90; // 轉換角度
+                                ElementTransformUtils.RotateElement(doc, washbasin2.Id, line, rotation);
+                                XYZ offset = new XYZ(womanRestroomLength - space, -washbasin_accessible_TotalWidth - washbasinTotalWidth2, 0);
+                                ElementTransformUtils.MoveElement(doc, washbasin2.Id, offset);
+                                womanRestroomElems.Remove(washbasin2); // 移除修改過的族群
+                            }
+                        }
+                        // MRT_無障礙洗面盆(SinoBIM-第1版)
+                        if (washbasin_accessible != null)
+                        {
+                            if (womanData.Type.Equals(4))
+                            {
+                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth1 + washbasin_accessible_TotalWidth / 2, -washbasin_accessible_TotalDepth, 0);
+                                ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
+                            }
+                            else if (womanData.Type.Equals(5))
+                            {
+                                LocationPoint lp = washbasin_accessible.Location as LocationPoint;
+                                Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
+                                double rotation = 2 * Math.PI / 360 * -90; // 轉換角度
+                                ElementTransformUtils.RotateElement(doc, washbasin_accessible.Id, line, rotation);
+                                XYZ offset = new XYZ(womanRestroomLength - washbasin_accessible_TotalDepth - space, -washbasin_accessible_TotalWidth / 2, 0);
+                                ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
+                            }
+                            else if (womanData.Type.Equals(6))
+                            {
+                                LocationPoint lp = washbasin_accessible.Location as LocationPoint;
+                                Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
+                                double rotation = 2 * Math.PI / 360 * -90; // 轉換角度
+                                ElementTransformUtils.RotateElement(doc, washbasin_accessible.Id, line, rotation);
+                                XYZ offset = new XYZ(womanRestroomLength - washbasin_accessible_TotalDepth, -washbasin_accessible_TotalWidth / 2, 0);
+                                ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
+                            }
+                            else if (womanData.Type.Equals(7))
+                            {
+                                LocationPoint lp = washbasin_accessible.Location as LocationPoint;
+                                Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
+                                double rotation = 2 * Math.PI / 360 * -90; // 轉換角度
+                                ElementTransformUtils.RotateElement(doc, washbasin_accessible.Id, line, rotation);
+                                XYZ offset = new XYZ(womanRestroomLength - washbasin_accessible_TotalDepth, -washbasin_accessible_TotalWidth / 2, 0);
+                                ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
+                            }
+                            womanRestroomElems.Remove(washbasin_accessible); // 移除修改過的族群
+                        }
+                    }
+                    else if (womanData.Rotate_id.Equals(3) || womanData.Rotate_id.Equals(4))
+                    {
+                        // toilet1：MRT_廁所群組(一般坐式)(SinoBIM-第2版)
+                        if (toilet1 != null)
+                        {
+                            XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth1, -toiletTotalDepth1, 0);
+                            ElementTransformUtils.MoveElement(doc, toilet1.Id, offset);
+                            womanRestroomElems.Remove(toilet1); // 移除修改過的族群
+                        }
+                        // MRT_廁所群組(蹲式)(SinoBIM-第2版)
+                        if (toilet_squat != null)
+                        {
+                            XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth, -toilet_squat_TotalDepth, 0);
+                            ElementTransformUtils.MoveElement(doc, toilet_squat.Id, offset);
+                            womanRestroomElems.Remove(toilet_squat); // 移除修改過的族群
+                        }
+                        // MRT_拖布盆間(SinoBIM-第2版)
+                        if (mop_basin != null)
+                        {
+                            XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth, -mop_basin_TotalDepth, 0);
+                            ElementTransformUtils.MoveElement(doc, mop_basin.Id, offset);
+                            womanRestroomElems.Remove(mop_basin); // 移除修改過的族群
+                        }
+                        // washbasin1：MRT_洗手台群組(SinoBIM-第3版)
+                        if (washbasin1 != null)
+                        {
+                            if (womanData.Type.Equals(4))
+                            {
+                                XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth1 - washbasin_accessible_TotalWidth - washbasinTotalWidth1, -washbasinTotalDepth1, 0);
+                                ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
+                            }
+                            else if (womanData.Type.Equals(5))
+                            {
+                                LocationPoint lp = washbasin1.Location as LocationPoint;
+                                Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
+                                double rotation = 2 * Math.PI / 360 * -90; // 轉換角度
+                                ElementTransformUtils.RotateElement(doc, washbasin1.Id, line, rotation);
+                                XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth1 - washbasinTotalDepth1, 0, 0);
+                                ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
+                            }
+                            else if (womanData.Type.Equals(6))
+                            {
+                                LocationPoint lp = washbasin1.Location as LocationPoint;
+                                Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
+                                double rotation = 2 * Math.PI / 360 * 90; // 轉換角度
+                                ElementTransformUtils.RotateElement(doc, washbasin1.Id, line, rotation);
+                                XYZ offset = new XYZ(toilet_squat_TotalWidth + toiletTotalWidth1 + washbasinTotalDepth1, -washbasinTotalWidth1, 0);
+                                ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
+                            }
+                            else if (womanData.Type.Equals(7))
+                            {
+                                LocationPoint lp = washbasin1.Location as LocationPoint;
+                                Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
+                                double rotation = 2 * Math.PI / 360 * 90; // 轉換角度
+                                ElementTransformUtils.RotateElement(doc, washbasin1.Id, line, rotation);
+                                XYZ offset = new XYZ(toilet_squat_TotalWidth + toiletTotalWidth1 + washbasinTotalDepth1, -washbasinTotalWidth1, 0);
+                                ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
+                            }
+                            womanRestroomElems.Remove(washbasin1); // 移除修改過的族群
+                        }
+                        // washbasin2：MRT_洗手台群組(SinoBIM-第3版)
+                        if (washbasin2 != null)
+                        {
+                            if (womanData.Type.Equals(5))
+                            {
+                                LocationPoint lp = washbasin2.Location as LocationPoint;
+                                Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
+                                double rotation = 2 * Math.PI / 360 * 90; // 轉換角度
+                                ElementTransformUtils.RotateElement(doc, washbasin2.Id, line, rotation);
+                                XYZ offset = new XYZ(space + washbasinTotalDepth2, -washbasin_accessible_TotalWidth - washbasinTotalWidth2, 0);
+                                ElementTransformUtils.MoveElement(doc, washbasin2.Id, offset);
+                                womanRestroomElems.Remove(washbasin2); // 移除修改過的族群
+                            }
+                        }
+                        // MRT_無障礙洗面盆(SinoBIM-第1版)
+                        if (washbasin_accessible != null)
+                        {
+                            if (womanData.Type.Equals(4))
+                            {
+                                XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth1 - washbasin_accessible_TotalWidth / 2, -washbasin_accessible_TotalDepth, 0);
+                                ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
+                            }
+                            else if (womanData.Type.Equals(5))
+                            {
+                                LocationPoint lp = washbasin_accessible.Location as LocationPoint;
+                                Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
+                                double rotation = 2 * Math.PI / 360 * 90; // 轉換角度
+                                ElementTransformUtils.RotateElement(doc, washbasin_accessible.Id, line, rotation);
+                                XYZ offset = new XYZ(space + washbasin_accessible_TotalDepth, -washbasin_accessible_TotalWidth / 2, 0);
+                                ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
+                            }
+                            else if (womanData.Type.Equals(6))
+                            {
+                                LocationPoint lp = washbasin_accessible.Location as LocationPoint;
+                                Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
+                                double rotation = 2 * Math.PI / 360 * -90; // 轉換角度
+                                ElementTransformUtils.RotateElement(doc, washbasin_accessible.Id, line, rotation);
+                                XYZ offset = new XYZ(womanRestroomLength - washbasin_accessible_TotalDepth, -washbasin_accessible_TotalWidth / 2, 0);
+                                ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
+                            }
+                            else if (womanData.Type.Equals(7))
+                            {
+                                LocationPoint lp = washbasin_accessible.Location as LocationPoint;
+                                Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
+                                double rotation = 2 * Math.PI / 360 * -90; // 轉換角度
+                                ElementTransformUtils.RotateElement(doc, washbasin_accessible.Id, line, rotation);
+                                XYZ offset = new XYZ(womanRestroomLength - washbasin_accessible_TotalDepth, -washbasin_accessible_TotalWidth / 2, 0);
+                                ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
+                            }
+                            womanRestroomElems.Remove(washbasin_accessible); // 移除修改過的族群
+                        }
+                    }
                 }
             }
         }
