@@ -11,6 +11,6 @@
 [{"Width":4.3,"Length":13.5,"RestroomWoman_x":50,"RestroomWoman_y":-5,"Toilet_Count":10,"Washbasin_Count":4,"Type":6,"Rotate_id":1,"Side_id":1,"Level_id":3}]
 [{"Width":4.3,"Length":13.5,"RestroomWoman_x":60,"RestroomWoman_y":-5,"Toilet_Count":10,"Washbasin_Count":4,"Type":6,"Rotate_id":3,"Side_id":1,"Level_id":3}]
 [{"Width":5.7,"Length":12.1,"RestroomWoman_x":29.3,"RestroomWoman_y":-15,"Toilet_Count":10,"Washbasin_Count":4,"Type":7,"Rotate_id":1,"Side_id":1,"Level_id":3}]
-[{"Width":5.7,"Length":12.1,"RestroomWoman_x":40,"RestroomWoman_y":-15,"Toilet_Count":10,"Washbasin_Count":4,"Type":7,"Rotate_id":3,"Side_id":1,"Level_id":3}]
+[{"Width":5.7,"Length":12.1,"RestroomWoman_x":40,"RestroomWoman_y":-15,"Toilet_Count":10,"Washbasin_Count":4,"Type":7,"Rotate_id":2,"Side_id":1,"Level_id":3}]
 [{"Width":5.2,"Length":9.9,"RestroomWoman_x":50,"RestroomWoman_y":-15,"Toilet_Count":10,"Washbasin_Count":4,"Type":8,"Rotate_id":1,"Side_id":1,"Level_id":3}]
 [{"Width":5.2,"Length":9.9,"RestroomWoman_x":60,"RestroomWoman_y":-15,"Toilet_Count":10,"Washbasin_Count":4,"Type":8,"Rotate_id":3,"Side_id":1,"Level_id":3}]
