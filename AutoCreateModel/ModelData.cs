@@ -4,11 +4,14 @@ namespace AutoCreateModel
 {
     public class ModelData
     {
-        public double Width { get; set; }
-        public double Length { get; set; }
-        public int Type { get; set; }
+        public int id { get; set; } // 設施id
+        public double Width { get; set; } // 寬度
+        public double Length { get; set; } // 長度
+        public int Type { get; set; } // 類型
         public int Side_id { get; set; }
-        public int Level_id { get; set; }
+        public int Level_id { get; set; } // 樓層
+        public int Restroom_id { get; set; } // 總體廁所id
+        public int Plan_id { get; set; } // 專案id
     }
     // 無障礙廁所
     public class AccessibleData : ModelData
@@ -37,6 +40,10 @@ namespace AutoCreateModel
     // 男廁
     public class ManData : ModelData
     {
+        public double Aisle_Width { get; set; } // 走道寬度
+        public double Aisle_Length { get; set; } // 走道長度
+        public int Mopbasin_id { get; set; } // 是否有拖布盆
+        public int AccessibleWashbasin_id { get; set; } // 是否有無障礙洗面盆
         public double RestroomMan_x { get; set; }
         public double RestroomMan_y { get; set; }
         public int Toilet_Count { get; set; }
@@ -47,6 +54,10 @@ namespace AutoCreateModel
     // 女廁
     public class WomanData : ModelData
     {
+        public double Aisle_Width { get; set; } // 走道寬度
+        public double Aisle_Length { get; set; } // 走道長度
+        public int Mopbasin_id { get; set; } // 是否有拖布盆
+        public int AccessibleWashbasin_id { get; set; } // 是否有無障礙洗面盆
         public double RestroomWoman_x { get; set; }
         public double RestroomWoman_y { get; set; }
         public int Toilet_Count { get; set; }
