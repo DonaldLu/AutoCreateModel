@@ -36,6 +36,7 @@ namespace AutoCreateModel
         public double prjNS = 0.0; // 專案基準點：N/S
         public double prjWE = 0.0; // 專案基準點：W/E
         public double angle = 0.0; // 旋轉角度
+        public double wallWidth = UnitUtils.ConvertToInternalUnits(0.2, DisplayUnitType.DUT_METERS); // 預設牆間距
         public void Execute(UIApplication uiapp)
         {
             UIDocument uidoc = uiapp.ActiveUIDocument;
@@ -168,8 +169,8 @@ namespace AutoCreateModel
                 }
 
                 double levelElevation = levelElevList[0].Height; // 建立廁所的樓層
-                manRestrooms = CreateManRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立男廁元件
-                //womanRestrooms = CreateWomanRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立女廁元件
+                //manRestrooms = CreateManRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立男廁元件
+                womanRestrooms = CreateWomanRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立女廁元件
                 //familyRestrooms = CreateFamilyRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立親子廁所元件
                 //accessibleRestrooms = CreateAccessibleRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立無障礙廁所元件
                 //breastfeedings = CreateBreastfeedingRoom(doc, jsonData, levelElevation, familySymbolList); // 建立哺集乳室
@@ -183,8 +184,8 @@ namespace AutoCreateModel
         private List<FamilyInstance> CreateManRestroom(Document doc, JsonData jsonData, double levelElevation, List<FamilySymbol> familySymbolList)
         {
             List<FamilyInstance> manRestrooms = new List<FamilyInstance>();
-            FamilySymbol toilet = familySymbolList.Where(x => x.FamilyName.Contains(RestroomGroup.toilet)).FirstOrDefault(); // 坐式馬桶
             FamilySymbol toilet_advanced_age = familySymbolList.Where(x => x.FamilyName.Contains(RestroomGroup.toilet_advanced_age)).FirstOrDefault(); // 高齡使用者坐式馬桶
+            FamilySymbol toilet = familySymbolList.Where(x => x.FamilyName.Contains(RestroomGroup.toilet)).FirstOrDefault(); // 坐式馬桶
             FamilySymbol toilet_squat = familySymbolList.Where(x => x.FamilyName.Contains(RestroomGroup.toilet_squat)).FirstOrDefault(); // 蹲式馬桶
             FamilySymbol mop_basin = familySymbolList.Where(x => x.FamilyName.Contains(RestroomGroup.mop_basin)).FirstOrDefault(); // 拖布盆
             FamilySymbol washbasin = familySymbolList.Where(x => x.FamilyName.Contains(RestroomGroup.washbasin)).FirstOrDefault(); // 洗手台
@@ -253,18 +254,21 @@ namespace AutoCreateModel
                     string noFamilySymbol = RestroomGroup.toilet_advanced_age.Replace("(SinoBIM-第", "");
                     noFamilySymbols.Add(noFamilySymbol);
                 }
-                if (mop_basin != null && manData.Mopbasin_id.Equals(1)) // 有拖布盆
+                if (manData.Mopbasin_id.Equals(1))
                 {
-                    if (manData.Toilet_Count >= 3)
+                    if (mop_basin != null) // 有拖布盆
                     {
-                        FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, mop_basin, StructuralType.NonStructural);
-                        manRestrooms.Add(instance);
+                        if (manData.Toilet_Count >= 3)
+                        {
+                            FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, mop_basin, StructuralType.NonStructural);
+                            manRestrooms.Add(instance);
+                        }
                     }
-                }
-                else
-                {
-                    string noFamilySymbol = RestroomGroup.mop_basin.Replace("(SinoBIM-第", "");
-                    noFamilySymbols.Add(noFamilySymbol);
+                    else
+                    {
+                        string noFamilySymbol = RestroomGroup.mop_basin.Replace("(SinoBIM-第", "");
+                        noFamilySymbols.Add(noFamilySymbol);
+                    }
                 }
                 if (washbasin != null)
                 {
@@ -298,18 +302,21 @@ namespace AutoCreateModel
                     string noFamilySymbol = RestroomGroup.washbasin.Replace("(SinoBIM-第", "");
                     noFamilySymbols.Add(noFamilySymbol);
                 }
-                if (washbasin_accessible != null && manData.AccessibleWashbasin_id.Equals(1))
+                if (manData.AccessibleWashbasin_id.Equals(1))
                 {
-                    if (manData.Washbasin_Count >= 2)
+                    if (washbasin_accessible != null)
                     {
-                        FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, washbasin_accessible, StructuralType.NonStructural);
-                        manRestrooms.Add(instance);
+                        if (manData.Washbasin_Count >= 2)
+                        {
+                            FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, washbasin_accessible, StructuralType.NonStructural);
+                            manRestrooms.Add(instance);
+                        }
                     }
-                }
-                else
-                {
-                    string noFamilySymbol = RestroomGroup.washbasin_accessible.Replace("(SinoBIM-第", "");
-                    noFamilySymbols.Add(noFamilySymbol);
+                    else
+                    {
+                        string noFamilySymbol = RestroomGroup.washbasin_accessible.Replace("(SinoBIM-第", "");
+                        noFamilySymbols.Add(noFamilySymbol);
+                    }
                 }
                 if (urinal != null)
                 {
@@ -345,6 +352,7 @@ namespace AutoCreateModel
         private List<FamilyInstance> CreateWomanRestroom(Document doc, JsonData jsonData, double levelElevation, List<FamilySymbol> familySymbolList)
         {
             List<FamilyInstance> womanRestrooms = new List<FamilyInstance>();
+            FamilySymbol toilet_advanced_age = familySymbolList.Where(x => x.FamilyName.Contains(RestroomGroup.toilet_advanced_age)).FirstOrDefault(); // 高齡使用者坐式馬桶
             FamilySymbol toilet = familySymbolList.Where(x => x.FamilyName.Contains(RestroomGroup.toilet)).FirstOrDefault(); // 坐式馬桶
             FamilySymbol toilet_squat = familySymbolList.Where(x => x.FamilyName.Contains(RestroomGroup.toilet_squat)).FirstOrDefault(); // 蹲式馬桶
             FamilySymbol mop_basin = familySymbolList.Where(x => x.FamilyName.Contains(RestroomGroup.mop_basin)).FirstOrDefault(); // 拖布盆
@@ -356,19 +364,24 @@ namespace AutoCreateModel
                 double x = UnitUtils.ConvertToInternalUnits(womanData.RestroomWoman_x, DisplayUnitType.DUT_METERS);
                 double y = UnitUtils.ConvertToInternalUnits(womanData.RestroomWoman_y, DisplayUnitType.DUT_METERS);
                 XYZ xyz = new XYZ(x, y, levelElevation);
+
+                // 廁間擺放原則：廁間數2/3坐式、1/3蹲式，除不盡以坐式為主；要有高齡者坐式馬桶(算坐式的)
+                double toiletCount = womanData.Toilet_Count; // 廁間數量
+                if (womanData.Mopbasin_id.Equals(1)) { toiletCount = toiletCount - 1; } // 如果有拖布間先扣除
+                double seatToilets = Math.Ceiling(toiletCount * 2 / 3) - 1; // 坐式馬桶數量，預留高齡者坐式馬桶間
+                if (seatToilets <= 1) { seatToilets = 0; } // 如果只有2個廁間：1高齡+1蹲式；只有1個廁間：1高齡
                 if (toilet != null)
                 {
                     if (womanData.Type.Equals(1) || womanData.Type.Equals(2) || womanData.Type.Equals(3))
                     {
-                        double toiletCount = womanData.Toilet_Count;
-                        if (womanData.Toilet_Count >= 4)
+                        if(seatToilets >= 2)
                         {
-                            toiletCount = womanData.Toilet_Count - 2; // 預留一個蹲式、一個拖布盆
                             FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, toilet, StructuralType.NonStructural);
+                            double seatToiletCount = Math.Round(Math.Ceiling(seatToilets * 2 / 3), 0, MidpointRounding.AwayFromZero);
                             if (instance.Symbol.FamilyName.Contains(RestroomGroup.toilet))
                             {
                                 Parameter counts = instance.LookupParameter("一般坐式數量");
-                                counts.Set(Math.Ceiling(toiletCount / 2));
+                                counts.Set(seatToiletCount);
                             }
                             womanRestrooms.Add(instance);
 
@@ -376,66 +389,20 @@ namespace AutoCreateModel
                             if (instance.Symbol.FamilyName.Contains(RestroomGroup.toilet))
                             {
                                 Parameter counts = instance.LookupParameter("一般坐式數量");
-                                counts.Set(toiletCount - Math.Ceiling(toiletCount / 2));
-                            }
-                            womanRestrooms.Add(instance);
-                        }
-                        else
-                        {
-                            FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, toilet, StructuralType.NonStructural);
-                            if (instance.Symbol.FamilyName.Contains(RestroomGroup.toilet))
-                            {
-                                Parameter counts = instance.LookupParameter("一般坐式數量");
-                                counts.Set(Math.Ceiling(toiletCount / 2));
-                            }
-                            womanRestrooms.Add(instance);
-
-                            instance = doc.Create.NewFamilyInstance(xyz, toilet, StructuralType.NonStructural);
-                            if (instance.Symbol.FamilyName.Contains(RestroomGroup.toilet))
-                            {
-                                Parameter counts = instance.LookupParameter("一般坐式數量");
-                                counts.Set(toiletCount - Math.Ceiling(toiletCount / 2));
+                                counts.Set(seatToilets - seatToiletCount);
                             }
                             womanRestrooms.Add(instance);
                         }
                     }
                     else if (womanData.Type.Equals(8))
                     {
-                        double toiletCount = womanData.Toilet_Count;
-                        if (womanData.Toilet_Count >= 4)
-                        {
-                            toiletCount = womanData.Toilet_Count - 2; // 預留一個蹲式、一個拖布盆
-                            FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, toilet, StructuralType.NonStructural);
-                            if (instance.Symbol.FamilyName.Contains(RestroomGroup.toilet))
-                            {
-                                Parameter counts = instance.LookupParameter("一般坐式數量");
-                                counts.Set(Math.Ceiling(toiletCount * 3 / 4));
-                            }
-                            womanRestrooms.Add(instance);
-
-                            instance = doc.Create.NewFamilyInstance(xyz, toilet, StructuralType.NonStructural);
-                            if (instance.Symbol.FamilyName.Contains(RestroomGroup.toilet))
-                            {
-                                Parameter counts = instance.LookupParameter("一般坐式數量");
-                                counts.Set(toiletCount - Math.Ceiling(toiletCount * 3 / 4));
-                            }
-                            womanRestrooms.Add(instance);
-                        }
-                        else if(womanData.Toilet_Count >= 2)
+                        if (seatToilets >= 1)
                         {
                             FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, toilet, StructuralType.NonStructural);
                             if (instance.Symbol.FamilyName.Contains(RestroomGroup.toilet))
                             {
                                 Parameter counts = instance.LookupParameter("一般坐式數量");
-                                counts.Set(Math.Ceiling(toiletCount / 2));
-                            }
-                            womanRestrooms.Add(instance);
-
-                            instance = doc.Create.NewFamilyInstance(xyz, toilet, StructuralType.NonStructural);
-                            if (instance.Symbol.FamilyName.Contains(RestroomGroup.toilet))
-                            {
-                                Parameter counts = instance.LookupParameter("一般坐式數量");
-                                counts.Set(toiletCount - Math.Ceiling(toiletCount / 2));
+                                counts.Set(seatToilets);
                             }
                             womanRestrooms.Add(instance);
                         }
@@ -446,7 +413,7 @@ namespace AutoCreateModel
                         if (instance.Symbol.FamilyName.Contains(RestroomGroup.toilet))
                         {
                             Parameter counts = instance.LookupParameter("一般坐式數量");
-                            counts.Set(womanData.Toilet_Count - 2); // 預留一個蹲式、一個拖布盆
+                            counts.Set(seatToilets);
                         }
                         womanRestrooms.Add(instance);
                     }
@@ -458,34 +425,44 @@ namespace AutoCreateModel
                 }
                 if(toilet_squat != null)
                 {
-                    if (womanData.Toilet_Count >= 3)
+                    FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, toilet_squat, StructuralType.NonStructural);
+                    if (instance.Symbol.FamilyName.Contains(RestroomGroup.toilet_squat))
                     {
-                        FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, toilet_squat, StructuralType.NonStructural);
-                        if (instance.Symbol.FamilyName.Contains(RestroomGroup.toilet_squat))
-                        {
-                            Parameter counts = instance.LookupParameter("蹲式數量");
-                            if (womanData.Toilet_Count >= 3) { counts.Set(1); }
-                        }
-                        womanRestrooms.Add(instance);
+                        Parameter counts = instance.LookupParameter("蹲式數量");
+                        counts.Set(toiletCount - seatToilets - 1);
                     }
+                    womanRestrooms.Add(instance);
                 }
                 else
                 {
                     string noFamilySymbol = RestroomGroup.toilet_squat.Replace("(SinoBIM-第", "");
                     noFamilySymbols.Add(noFamilySymbol);
                 }
-                if (mop_basin != null)
+                if (toilet_advanced_age != null) // 高齡使用者坐式馬桶
                 {
-                    if (womanData.Toilet_Count >= 4)
-                    {
-                        FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, mop_basin, StructuralType.NonStructural);
-                        womanRestrooms.Add(instance);
-                    }
+                    FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, toilet_advanced_age, StructuralType.NonStructural);
+                    womanRestrooms.Add(instance);
                 }
                 else
                 {
-                    string noFamilySymbol = RestroomGroup.mop_basin.Replace("(SinoBIM-第", "");
+                    string noFamilySymbol = RestroomGroup.toilet_advanced_age.Replace("(SinoBIM-第", "");
                     noFamilySymbols.Add(noFamilySymbol);
+                }
+                if (womanData.Mopbasin_id.Equals(1))
+                {
+                    if (mop_basin != null)
+                    {
+                        if (womanData.Toilet_Count >= 4)
+                        {
+                            FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, mop_basin, StructuralType.NonStructural);
+                            womanRestrooms.Add(instance);
+                        }
+                    }
+                    else
+                    {
+                        string noFamilySymbol = RestroomGroup.mop_basin.Replace("(SinoBIM-第", "");
+                        noFamilySymbols.Add(noFamilySymbol);
+                    }
                 }
                 if (washbasin != null)
                 {
@@ -542,18 +519,21 @@ namespace AutoCreateModel
                     string noFamilySymbol = RestroomGroup.washbasin.Replace("(SinoBIM-第", "");
                     noFamilySymbols.Add(noFamilySymbol);
                 }
-                if (washbasin_accessible != null)
+                if (womanData.AccessibleWashbasin_id.Equals(1))
                 {
-                    if (womanData.Washbasin_Count >= 2)
+                    if (washbasin_accessible != null)
                     {
-                        FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, washbasin_accessible, StructuralType.NonStructural);
-                        womanRestrooms.Add(instance);
+                        if (womanData.Washbasin_Count >= 2)
+                        {
+                            FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, washbasin_accessible, StructuralType.NonStructural);
+                            womanRestrooms.Add(instance);
+                        }
                     }
-                }
-                else
-                {
-                    string noFamilySymbol = RestroomGroup.washbasin_accessible.Replace("(SinoBIM-第", "");
-                    noFamilySymbols.Add(noFamilySymbol);
+                    else
+                    {
+                        string noFamilySymbol = RestroomGroup.washbasin_accessible.Replace("(SinoBIM-第", "");
+                        noFamilySymbols.Add(noFamilySymbol);
+                    }
                 }
             }
             return womanRestrooms;
@@ -724,7 +704,7 @@ namespace AutoCreateModel
                 double mop_basin_TotalWidth = 0.0;
                 double mop_basin_TotalDepth = 0.0;
                 double mop_basin_partitionThickness = 0.0;
-                if (mop_basin != null && manData.Mopbasin_id == 1)
+                if (mop_basin != null && manData.Mopbasin_id.Equals(1))
                 {
                     mop_basin_TotalWidth = mop_basin.LookupParameter("拖布盆間寬度").AsDouble();
                     mop_basin_TotalDepth = mop_basin.LookupParameter("總深度").AsDouble();
@@ -747,7 +727,7 @@ namespace AutoCreateModel
                 // MRT_無障礙洗面盆(SinoBIM-第1版)
                 double washbasin_accessible_TotalWidth = 0.0;
                 double washbasin_accessible_TotalDepth = 0.0;
-                if (washbasin_accessible != null && manData.AccessibleWashbasin_id == 1)
+                if (washbasin_accessible != null && manData.AccessibleWashbasin_id.Equals(1))
                 {
                     washbasin_accessible_TotalWidth = washbasin_accessible.LookupParameter("設備箱預設寬度").AsDouble() +
                                                       washbasin_accessible.LookupParameter("設備箱左側延伸").AsDouble() +
@@ -807,7 +787,7 @@ namespace AutoCreateModel
                         {
                             if (manData.Type.Equals(1))
                             {
-                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth + toilet_advanced_age_TotalWidth + washbasin_accessible_TotalWidth / 2, -washbasin_accessible_TotalDepth, 0);
+                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth + toilet_advanced_age_TotalWidth + wallWidth + washbasin_accessible_TotalWidth / 2, -washbasin_accessible_TotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             else if (manData.Type.Equals(2))
@@ -825,7 +805,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * 90; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin_accessible.Id, line, rotation);
-                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth + toilet_advanced_age_TotalWidth + partitionThickness + washbasin_accessible_TotalDepth, -washbasin_accessible_TotalWidth / 2, 0);
+                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth + toilet_advanced_age_TotalWidth + wallWidth + partitionThickness + washbasin_accessible_TotalDepth, -washbasin_accessible_TotalWidth / 2, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             manRestroomElems.Remove(washbasin_accessible); // 移除修改過的族群
@@ -835,7 +815,7 @@ namespace AutoCreateModel
                         {
                             if (manData.Type.Equals(1))
                             {
-                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth + toilet_advanced_age_TotalWidth + washbasin_accessible_TotalWidth, -washbasinTotalDepth, 0);
+                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth + toilet_advanced_age_TotalWidth + wallWidth + washbasin_accessible_TotalWidth, -washbasinTotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin.Id, offset);
                             }
                             else if (manData.Type.Equals(2))
@@ -905,7 +885,7 @@ namespace AutoCreateModel
                         {
                             if (manData.Type.Equals(1))
                             {
-                                XYZ offset = new XYZ(manRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth - toilet_advanced_age_TotalWidth - washbasin_accessible_TotalWidth / 2, -washbasin_accessible_TotalDepth, 0);
+                                XYZ offset = new XYZ(manRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth - toilet_advanced_age_TotalWidth - wallWidth - washbasin_accessible_TotalWidth / 2, -washbasin_accessible_TotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             else if (manData.Type.Equals(2))
@@ -923,7 +903,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * -90; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin_accessible.Id, line, rotation);
-                                XYZ offset = new XYZ(manRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth - toilet_advanced_age_TotalWidth - washbasin_accessible_TotalDepth, -washbasin_accessible_TotalWidth / 2, 0);
+                                XYZ offset = new XYZ(manRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth - toilet_advanced_age_TotalWidth - wallWidth - washbasin_accessible_TotalDepth, -washbasin_accessible_TotalWidth / 2, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             manRestroomElems.Remove(washbasin_accessible); // 移除修改過的族群
@@ -933,7 +913,7 @@ namespace AutoCreateModel
                         {
                             if (manData.Type.Equals(1))
                             {
-                                XYZ offset = new XYZ(manRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth - toilet_advanced_age_TotalWidth - washbasin_accessible_TotalWidth - washbasinTotalWidth, -washbasinTotalDepth, 0);
+                                XYZ offset = new XYZ(manRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth - toilet_advanced_age_TotalWidth - wallWidth - washbasin_accessible_TotalWidth - washbasinTotalWidth, -washbasinTotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin.Id, offset);
                             }
                             else if (manData.Type.Equals(2))
@@ -1004,7 +984,7 @@ namespace AutoCreateModel
                         // MRT_小便斗群組(SinoBIM-第1版)
                         if (urinal != null)
                         {
-                            XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth + toilet_advanced_age_TotalWidth, -urinalTotalDepth, 0);
+                            XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth + toilet_advanced_age_TotalWidth + wallWidth, -urinalTotalDepth, 0);
                             ElementTransformUtils.MoveElement(doc, urinal.Id, offset);
                             manRestroomElems.Remove(urinal); // 移除修改過的族群
                         }
@@ -1013,7 +993,7 @@ namespace AutoCreateModel
                         {
                             if (manData.Type.Equals(4))
                             {
-                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth + toilet_advanced_age_TotalWidth + urinalTotalWidth + washbasin_accessible_TotalWidth / 2, -washbasin_accessible_TotalDepth, 0);
+                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth + toilet_advanced_age_TotalWidth + wallWidth + urinalTotalWidth + wallWidth + washbasin_accessible_TotalWidth / 2, -washbasin_accessible_TotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             else if (manData.Type.Equals(5))
@@ -1022,7 +1002,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * 90; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin_accessible.Id, line, rotation);
-                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth + toilet_advanced_age_TotalWidth + urinalTotalWidth + washbasin_accessible_TotalDepth, -washbasin_accessible_TotalWidth / 2, 0);
+                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth + toilet_advanced_age_TotalWidth + wallWidth + urinalTotalWidth + wallWidth + washbasin_accessible_TotalDepth, -washbasin_accessible_TotalWidth / 2, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             else if (manData.Type.Equals(6))
@@ -1031,7 +1011,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * 180; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin_accessible.Id, line, rotation);
-                                XYZ offset = new XYZ(manRestroomLength - space - aisle_Length - washbasinTotalWidth - washbasin_accessible_TotalWidth / 2, -manRestroomWidth + washbasin_accessible_TotalDepth, 0);
+                                XYZ offset = new XYZ(manRestroomLength - space - aisle_Length - wallWidth - washbasinTotalWidth - washbasin_accessible_TotalWidth / 2, -manRestroomWidth + washbasin_accessible_TotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             else if (manData.Type.Equals(7))
@@ -1049,7 +1029,7 @@ namespace AutoCreateModel
                                 {
                                     washbasin_accessible_place = manRestroomLength / 2 + washbasinNormalWidth / washbasinNormalCount - washbasinTotalWidth - washbasin_accessible_TotalWidth / 2;
                                 }
-                                XYZ offset = new XYZ(washbasin_accessible_place, -manRestroomWidth + washbasin_accessible_TotalDepth + space, 0);
+                                XYZ offset = new XYZ(washbasin_accessible_place, -manRestroomWidth + wallWidth + washbasin_accessible_TotalDepth + space, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             manRestroomElems.Remove(washbasin_accessible); // 移除修改過的族群
@@ -1059,7 +1039,7 @@ namespace AutoCreateModel
                         {
                             if (manData.Type.Equals(4))
                             {
-                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth + toilet_advanced_age_TotalWidth + urinalTotalWidth + washbasin_accessible_TotalWidth, -washbasinTotalDepth, 0);
+                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth + toilet_advanced_age_TotalWidth + wallWidth + urinalTotalWidth + wallWidth + washbasin_accessible_TotalWidth, -washbasinTotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin.Id, offset);
                             }
                             else if (manData.Type.Equals(5))
@@ -1068,7 +1048,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * -90; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin.Id, line, rotation);
-                                XYZ offset = new XYZ(manRestroomLength - space - aisle_Width - washbasinTotalDepth, 0, 0);
+                                XYZ offset = new XYZ(manRestroomLength - space - aisle_Length - wallWidth - washbasinTotalDepth, 0, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin.Id, offset);
                             }
                             else if (manData.Type.Equals(6))
@@ -1077,7 +1057,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * 180; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin.Id, line, rotation);
-                                XYZ offset = new XYZ(manRestroomLength - space - aisle_Length, -manRestroomWidth + washbasinTotalDepth, 0);
+                                XYZ offset = new XYZ(manRestroomLength - space - aisle_Length - wallWidth, -manRestroomWidth + washbasinTotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin.Id, offset);
                             }
                             else if (manData.Type.Equals(7))
@@ -1095,7 +1075,7 @@ namespace AutoCreateModel
                                 {
                                     washbasinPlace = manRestroomLength / 2 + washbasinNormalWidth / washbasinNormalCount;
                                 }
-                                XYZ offset = new XYZ(washbasinPlace, -manRestroomWidth + washbasinTotalDepth + space, 0);
+                                XYZ offset = new XYZ(washbasinPlace, -manRestroomWidth + wallWidth + washbasinTotalDepth + space, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin.Id, offset);
                             }
                             manRestroomElems.Remove(washbasin); // 移除修改過的族群
@@ -1134,7 +1114,7 @@ namespace AutoCreateModel
                         // MRT_小便斗群組(SinoBIM-第1版)
                         if (urinal != null)
                         {
-                            XYZ offset = new XYZ(manRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth - toilet_advanced_age_TotalWidth - urinalTotalWidth, -urinalTotalDepth, 0);
+                            XYZ offset = new XYZ(manRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth - toilet_advanced_age_TotalWidth - wallWidth - urinalTotalWidth, -urinalTotalDepth, 0);
                             ElementTransformUtils.MoveElement(doc, urinal.Id, offset);
                             manRestroomElems.Remove(urinal); // 移除修改過的族群
                         }
@@ -1143,7 +1123,7 @@ namespace AutoCreateModel
                         {
                             if (manData.Type.Equals(4))
                             {
-                                XYZ offset = new XYZ(manRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth - toilet_advanced_age_TotalWidth - urinalTotalWidth - washbasin_accessible_TotalWidth / 2, -washbasin_accessible_TotalDepth, 0);
+                                XYZ offset = new XYZ(manRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth - toilet_advanced_age_TotalWidth - wallWidth - urinalTotalWidth - wallWidth - washbasin_accessible_TotalWidth / 2, -washbasin_accessible_TotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             else if (manData.Type.Equals(5))
@@ -1152,7 +1132,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * -90; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin_accessible.Id, line, rotation);
-                                XYZ offset = new XYZ(manRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth - toilet_advanced_age_TotalWidth - urinalTotalWidth - washbasin_accessible_TotalDepth, -washbasin_accessible_TotalWidth / 2, 0);
+                                XYZ offset = new XYZ(manRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth - toilet_advanced_age_TotalWidth - wallWidth - urinalTotalWidth - wallWidth - washbasin_accessible_TotalDepth, -washbasin_accessible_TotalWidth / 2, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             else if (manData.Type.Equals(6))
@@ -1161,7 +1141,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * 180; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin_accessible.Id, line, rotation);
-                                XYZ offset = new XYZ(space + aisle_Length + washbasinTotalWidth + washbasin_accessible_TotalWidth / 2, -manRestroomWidth + washbasin_accessible_TotalDepth, 0);
+                                XYZ offset = new XYZ(space + aisle_Length + wallWidth + washbasinTotalWidth + washbasin_accessible_TotalWidth / 2, -manRestroomWidth + washbasin_accessible_TotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             manRestroomElems.Remove(washbasin_accessible); // 移除修改過的族群
@@ -1171,7 +1151,7 @@ namespace AutoCreateModel
                         {
                             if (manData.Type.Equals(4))
                             {
-                                XYZ offset = new XYZ(manRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth - toilet_advanced_age_TotalWidth - urinalTotalWidth - washbasin_accessible_TotalWidth - washbasinTotalWidth, -washbasinTotalDepth, 0);
+                                XYZ offset = new XYZ(manRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth - toilet_advanced_age_TotalWidth - wallWidth - urinalTotalWidth - wallWidth - washbasin_accessible_TotalWidth - washbasinTotalWidth, -washbasinTotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin.Id, offset);
                             }
                             else if (manData.Type.Equals(5))
@@ -1180,7 +1160,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * 90; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin.Id, line, rotation);
-                                XYZ offset = new XYZ(washbasinTotalDepth + space + aisle_Width, -washbasinTotalWidth, 0);
+                                XYZ offset = new XYZ(washbasinTotalDepth + space + aisle_Length + wallWidth, -washbasinTotalWidth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin.Id, offset);
                             }
                             else if (manData.Type.Equals(6))
@@ -1189,7 +1169,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * 180; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin.Id, line, rotation);
-                                XYZ offset = new XYZ(space + aisle_Length + washbasinTotalWidth, -manRestroomWidth + washbasinTotalDepth, 0);
+                                XYZ offset = new XYZ(space + aisle_Length + wallWidth + washbasinTotalWidth, -manRestroomWidth + washbasinTotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin.Id, offset);
                             }
                             manRestroomElems.Remove(washbasin); // 移除修改過的族群
@@ -1203,6 +1183,11 @@ namespace AutoCreateModel
         {
             foreach (WomanData womanData in jsonData.WomanDataList)
             {
+                double toiletCount = womanData.Toilet_Count; // 廁間數量
+                if (womanData.Mopbasin_id.Equals(1)) { toiletCount = toiletCount - 1; } // 如果有拖布間先扣除
+                double seatToilets = Math.Ceiling(toiletCount * 2 / 3) - 1; // 坐式馬桶數量，預留高齡者坐式馬桶間
+                if (seatToilets <= 1) { seatToilets = 0; } // 如果只有2個廁間：1高齡+1蹲式；只有1個廁間：1高齡
+
                 FamilyInstance toilet1 = womanRestroomElems.Where(x => x.Symbol.FamilyName.Contains(RestroomGroup.toilet)).FirstOrDefault(); // 坐式馬桶1
                 FamilyInstance toilet2 = womanRestroomElems.Where(x => x.Symbol.FamilyName.Contains(RestroomGroup.toilet) && x.Id != toilet1.Id).FirstOrDefault(); // 坐式馬桶2
                 // 如果toilet2不為null, 先比對toilet1、toilet2哪個數量高, 將toilet1設置為數量高的
@@ -1216,6 +1201,7 @@ namespace AutoCreateModel
                     toilet1 = toiletMax;
                     toilet2 = toiletMin;
                 }
+                FamilyInstance toilet_advanced_age = womanRestroomElems.Where(x => x.Symbol.FamilyName.Contains(RestroomGroup.toilet_advanced_age)).FirstOrDefault(); // 高齡使用者坐式馬桶
                 FamilyInstance toilet_squat = womanRestroomElems.Where(x => x.Symbol.FamilyName.Contains(RestroomGroup.toilet_squat)).FirstOrDefault(); // 蹲式馬桶
                 FamilyInstance mop_basin = womanRestroomElems.Where(x => x.Symbol.FamilyName.Contains(RestroomGroup.mop_basin)).FirstOrDefault(); // 拖布盆間
                 FamilyInstance washbasin1 = womanRestroomElems.Where(x => x.Symbol.FamilyName.Contains(RestroomGroup.washbasin)).FirstOrDefault(); // 洗手台1
@@ -1255,13 +1241,24 @@ namespace AutoCreateModel
                     partitionThickness2 = toilet2.LookupParameter("隔板厚度").AsDouble() / 2;
                 }
 
+                // MRT_高齡使用者坐式馬桶間(SinoBIM-第2版)
+                double toilet_advanced_age_TotalWidth = 0.0;
+                double toilet_advanced_age_TotalDepth = 0.0;
+                double toilet_advanced_age_partitionThickness = 0.0;
+                if (toilet_advanced_age != null)
+                {
+                    toilet_advanced_age_TotalWidth = toilet_advanced_age.LookupParameter("高齡使用者坐式寬度").AsDouble();
+                    toilet_advanced_age_TotalDepth = toilet_advanced_age.LookupParameter("總深度").AsDouble();
+                    toilet_advanced_age_partitionThickness = toilet_advanced_age.LookupParameter("隔板厚度").AsDouble() / 2;
+                }
+
                 // MRT_廁所群組(蹲式)(SinoBIM-第2版)
                 double toilet_squat_TotalWidth = 0.0;
                 double toilet_squat_TotalDepth = 0.0;
                 double toilet_squat_partitionThickness = 0.0;
                 if (toilet_squat != null)
                 {
-                    toilet_squat_TotalWidth = toilet_squat.LookupParameter("蹲式寬度").AsDouble();
+                    toilet_squat_TotalWidth = toilet_squat.LookupParameter("蹲式總寬度").AsDouble();
                     toilet_squat_TotalDepth = toilet_squat.LookupParameter("總深度").AsDouble();
                     toilet_squat_partitionThickness = toilet_squat.LookupParameter("隔板厚度").AsDouble() / 2;
                 }
@@ -1270,7 +1267,7 @@ namespace AutoCreateModel
                 double mop_basin_TotalWidth = 0.0;
                 double mop_basin_TotalDepth = 0.0;
                 double mop_basin_partitionThickness = 0.0;
-                if (mop_basin != null)
+                if (mop_basin != null && womanData.Mopbasin_id.Equals(1))
                 {
                     mop_basin_TotalWidth = mop_basin.LookupParameter("拖布盆間寬度").AsDouble();
                     mop_basin_TotalDepth = mop_basin.LookupParameter("總深度").AsDouble();
@@ -1302,7 +1299,7 @@ namespace AutoCreateModel
                 // MRT_無障礙洗面盆(SinoBIM-第1版)
                 double washbasin_accessible_TotalWidth = 0.0;
                 double washbasin_accessible_TotalDepth = 0.0;
-                if (washbasin_accessible != null)
+                if (washbasin_accessible != null && womanData.AccessibleWashbasin_id.Equals(1))
                 {
                     washbasin_accessible_TotalWidth = washbasin_accessible.LookupParameter("設備箱預設寬度").AsDouble() +
                                                       washbasin_accessible.LookupParameter("設備箱左側延伸").AsDouble() +
@@ -1312,6 +1309,8 @@ namespace AutoCreateModel
 
                 double womanRestroomLength = UnitUtils.ConvertToInternalUnits(womanData.Length, DisplayUnitType.DUT_METERS); // 廁所總長度
                 double womanRestroomWidth = UnitUtils.ConvertToInternalUnits(womanData.Width, DisplayUnitType.DUT_METERS); // 廁所總寬度
+                double aisle_Length = UnitUtils.ConvertToInternalUnits(womanData.Aisle_Length, DisplayUnitType.DUT_METERS); // 走道增加長度間距
+                double aisle_Width = UnitUtils.ConvertToInternalUnits(womanData.Aisle_Width, DisplayUnitType.DUT_METERS); // 走道增加寬度間距
                 double space = UnitUtils.ConvertToInternalUnits(1.5, DisplayUnitType.DUT_METERS); // 間距
 
                 if (womanData.Type.Equals(1) || womanData.Type.Equals(2) || womanData.Type.Equals(3) || womanData.Type.Equals(8))
@@ -1321,7 +1320,7 @@ namespace AutoCreateModel
                         // toilet1：MRT_廁所群組(一般坐式)(SinoBIM-第2版)
                         if (toilet1 != null)
                         {
-                            XYZ offset = new XYZ(toilet_squat_TotalWidth, -toiletTotalDepth1, 0);
+                            XYZ offset = new XYZ(mop_basin_TotalWidth, -toiletTotalDepth1, 0);
                             ElementTransformUtils.MoveElement(doc, toilet1.Id, offset);
                             womanRestroomElems.Remove(toilet1); // 移除修改過的族群
                         }
@@ -1332,25 +1331,32 @@ namespace AutoCreateModel
                             Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                             double rotation = 2 * Math.PI / 360 * 180; // 轉換角度
                             ElementTransformUtils.RotateElement(doc, toilet2.Id, line, rotation);
-                            XYZ offset = new XYZ(mop_basin_TotalWidth + toiletTotalWidth2, -womanRestroomWidth + toiletTotalDepth2, 0);
+                            XYZ offset = new XYZ(toilet_squat_TotalWidth + toiletTotalWidth2, -womanRestroomWidth + toiletTotalDepth2, 0);
                             ElementTransformUtils.MoveElement(doc, toilet2.Id, offset);
                             womanRestroomElems.Remove(toilet2); // 移除修改過的族群
+                        }
+                        // MRT_高齡使用者坐式馬桶間(SinoBIM-第2版)
+                        if (toilet_advanced_age != null)
+                        {
+                            XYZ offset = new XYZ(mop_basin_TotalWidth + toiletTotalWidth1, -toilet_advanced_age_TotalDepth, 0);
+                            ElementTransformUtils.MoveElement(doc, toilet_advanced_age.Id, offset);
+                            womanRestroomElems.Remove(toilet_advanced_age); // 移除修改過的族群
                         }
                         // MRT_廁所群組(蹲式)(SinoBIM-第2版)
                         if (toilet_squat != null)
                         {
-                            XYZ offset = new XYZ(0, -toilet_squat_TotalDepth, 0);
+                            LocationPoint lp = toilet_squat.Location as LocationPoint;
+                            Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
+                            double rotation = 2 * Math.PI / 360 * 180; // 轉換角度
+                            ElementTransformUtils.RotateElement(doc, toilet_squat.Id, line, rotation);
+                            XYZ offset = new XYZ(toilet_squat_TotalWidth, -womanRestroomWidth + toilet_squat_TotalDepth, 0);
                             ElementTransformUtils.MoveElement(doc, toilet_squat.Id, offset);
                             womanRestroomElems.Remove(toilet_squat); // 移除修改過的族群
                         }
                         // MRT_拖布盆間(SinoBIM-第2版)
                         if (mop_basin != null)
                         {
-                            LocationPoint lp = mop_basin.Location as LocationPoint;
-                            Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
-                            double rotation = 2 * Math.PI / 360 * 180; // 轉換角度
-                            ElementTransformUtils.RotateElement(doc, mop_basin.Id, line, rotation);
-                            XYZ offset = new XYZ(mop_basin_TotalWidth, -womanRestroomWidth + mop_basin_TotalDepth, 0);
+                            XYZ offset = new XYZ(0, -mop_basin_TotalDepth, 0);
                             ElementTransformUtils.MoveElement(doc, mop_basin.Id, offset);
                             womanRestroomElems.Remove(mop_basin); // 移除修改過的族群
                         }
@@ -1359,7 +1365,7 @@ namespace AutoCreateModel
                         {
                             if (womanData.Type.Equals(1))
                             {
-                                XYZ offset = new XYZ(womanRestroomLength - washbasinTotalWidth1, -washbasinTotalDepth1, 0);
+                                XYZ offset = new XYZ(mop_basin_TotalWidth + toiletTotalWidth1 + toilet_advanced_age_TotalWidth + wallWidth + washbasin_accessible_TotalWidth, -washbasinTotalDepth1, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
                             }
                             else if (womanData.Type.Equals(2))
@@ -1377,7 +1383,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * 90; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin1.Id, line, rotation);
-                                XYZ offset = new XYZ(toilet_squat_TotalWidth + toiletTotalWidth1 + washbasinTotalDepth1, -washbasinTotalWidth1, 0);
+                                XYZ offset = new XYZ(mop_basin_TotalWidth + toiletTotalWidth1 + toilet_advanced_age_TotalWidth + wallWidth + washbasinTotalDepth1, -washbasinTotalWidth1, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
                             }
                             else if (womanData.Type.Equals(8))
@@ -1386,7 +1392,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * 180; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin1.Id, line, rotation);
-                                XYZ offset = new XYZ(mop_basin_TotalWidth + toiletTotalWidth2 + washbasin_accessible_TotalWidth + washbasinTotalWidth1, -womanRestroomWidth + washbasinTotalDepth1, 0);
+                                XYZ offset = new XYZ(toilet_squat_TotalWidth + wallWidth + washbasin_accessible_TotalWidth + washbasinTotalWidth1, -womanRestroomWidth + washbasinTotalDepth1, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
                             }
                             womanRestroomElems.Remove(washbasin1); // 移除修改過的族群
@@ -1410,7 +1416,7 @@ namespace AutoCreateModel
                         {
                             if (womanData.Type.Equals(1))
                             {
-                                XYZ offset = new XYZ(womanRestroomLength - washbasinTotalWidth1 - washbasin_accessible_TotalWidth / 2, -washbasin_accessible_TotalDepth, 0);
+                                XYZ offset = new XYZ(mop_basin_TotalWidth + toiletTotalWidth1 + toilet_advanced_age_TotalWidth + wallWidth + washbasin_accessible_TotalWidth / 2, -washbasin_accessible_TotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             else if (womanData.Type.Equals(2))
@@ -1437,7 +1443,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * 180; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin_accessible.Id, line, rotation);
-                                XYZ offset = new XYZ(mop_basin_TotalWidth + toiletTotalWidth2 + washbasin_accessible_TotalWidth / 2, -womanRestroomWidth + washbasin_accessible_TotalDepth, 0);
+                                XYZ offset = new XYZ(toilet_squat_TotalWidth + wallWidth + washbasin_accessible_TotalWidth / 2, -womanRestroomWidth + washbasin_accessible_TotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             womanRestroomElems.Remove(washbasin_accessible); // 移除修改過的族群
@@ -1448,7 +1454,7 @@ namespace AutoCreateModel
                         // toilet1：MRT_廁所群組(一般坐式)(SinoBIM-第2版)
                         if (toilet1 != null)
                         {
-                            XYZ offset = new XYZ(womanRestroomLength - toilet_squat_TotalWidth - toiletTotalWidth1, -toiletTotalDepth1, 0);
+                            XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth - toiletTotalWidth1, -toiletTotalDepth1, 0);
                             ElementTransformUtils.MoveElement(doc, toilet1.Id, offset);
                             womanRestroomElems.Remove(toilet1); // 移除修改過的族群
                         }
@@ -1459,34 +1465,40 @@ namespace AutoCreateModel
                             Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                             double rotation = 2 * Math.PI / 360 * 180; // 轉換角度
                             ElementTransformUtils.RotateElement(doc, toilet2.Id, line, rotation);
-                            XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth, -womanRestroomWidth + toiletTotalDepth2, 0);
+                            XYZ offset = new XYZ(womanRestroomLength - toilet_squat_TotalWidth, -womanRestroomWidth + toiletTotalDepth2, 0);
                             ElementTransformUtils.MoveElement(doc, toilet2.Id, offset);
                             womanRestroomElems.Remove(toilet2); // 移除修改過的族群
+                        }
+                        // MRT_高齡使用者坐式馬桶間(SinoBIM-第2版)
+                        if (toilet_advanced_age != null)
+                        {
+                            XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth - toiletTotalWidth1 - toilet_advanced_age_TotalWidth, -toilet_advanced_age_TotalDepth, 0);
+                            ElementTransformUtils.MoveElement(doc, toilet_advanced_age.Id, offset);
+                            womanRestroomElems.Remove(toilet_advanced_age); // 移除修改過的族群
                         }
                         // MRT_廁所群組(蹲式)(SinoBIM-第2版)
                         if (toilet_squat != null)
                         {
-                            XYZ offset = new XYZ(womanRestroomLength - toilet_squat_TotalWidth, -toilet_squat_TotalDepth, 0);
+                            LocationPoint lp = toilet_squat.Location as LocationPoint;
+                            Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
+                            double rotation = 2 * Math.PI / 360 * 180; // 轉換角度
+                            ElementTransformUtils.RotateElement(doc, toilet_squat.Id, line, rotation);
+                            XYZ offset = new XYZ(womanRestroomLength, -womanRestroomWidth + toilet_squat_TotalDepth, 0);
                             ElementTransformUtils.MoveElement(doc, toilet_squat.Id, offset);
                             womanRestroomElems.Remove(toilet_squat); // 移除修改過的族群
                         }
                         // MRT_拖布盆間(SinoBIM-第2版)
                         if (mop_basin != null)
                         {
-                            LocationPoint lp = mop_basin.Location as LocationPoint;
-                            Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
-                            double rotation = 2 * Math.PI / 360 * 180; // 轉換角度
-                            ElementTransformUtils.RotateElement(doc, mop_basin.Id, line, rotation);
-                            XYZ offset = new XYZ(womanRestroomLength, -womanRestroomWidth + mop_basin_TotalDepth, 0);
+                            XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth, -mop_basin_TotalDepth, 0);
                             ElementTransformUtils.MoveElement(doc, mop_basin.Id, offset);
-                            womanRestroomElems.Remove(mop_basin); // 移除修改過的族群
                         }
                         // washbasin1：MRT_洗手台群組(SinoBIM-第3版)
                         if (washbasin1 != null)
                         {
                             if (womanData.Type.Equals(1))
                             {
-                                XYZ offset = new XYZ(0, -washbasinTotalDepth1, 0);
+                                XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth - toiletTotalWidth1 - toilet_advanced_age_TotalWidth - washbasin_accessible_TotalWidth - wallWidth - washbasinTotalWidth1, -washbasinTotalDepth1, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
                             }
                             else if (womanData.Type.Equals(2))
@@ -1504,7 +1516,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * -90; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin1.Id, line, rotation);
-                                XYZ offset = new XYZ(womanRestroomLength - toilet_squat_TotalWidth - toiletTotalWidth1 - washbasinTotalDepth1, 0, 0);
+                                XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth - toiletTotalWidth1 - toilet_advanced_age_TotalWidth - wallWidth - washbasinTotalDepth1, 0, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
                             }
                             else if (womanData.Type.Equals(8))
@@ -1513,7 +1525,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * 180; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin1.Id, line, rotation);
-                                XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth - toiletTotalWidth2 - washbasin_accessible_TotalWidth, -womanRestroomWidth + washbasinTotalDepth1, 0);
+                                XYZ offset = new XYZ(womanRestroomLength - toilet_squat_TotalWidth - wallWidth - washbasin_accessible_TotalWidth, -womanRestroomWidth + washbasinTotalDepth1, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
                             }
                             womanRestroomElems.Remove(washbasin1); // 移除修改過的族群
@@ -1537,7 +1549,7 @@ namespace AutoCreateModel
                         {
                             if (womanData.Type.Equals(1))
                             {
-                                XYZ offset = new XYZ(washbasinTotalWidth1 + washbasin_accessible_TotalWidth / 2, -washbasin_accessible_TotalDepth, 0);
+                                XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth - toiletTotalWidth1 - toilet_advanced_age_TotalWidth - wallWidth - washbasin_accessible_TotalWidth / 2, -washbasin_accessible_TotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             else if (womanData.Type.Equals(2))
@@ -1564,7 +1576,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * 180; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin_accessible.Id, line, rotation);
-                                XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth - toiletTotalWidth2 - washbasin_accessible_TotalWidth / 2, -womanRestroomWidth + washbasin_accessible_TotalDepth, 0);
+                                XYZ offset = new XYZ(womanRestroomLength - toilet_squat_TotalWidth - wallWidth - washbasin_accessible_TotalWidth / 2, -womanRestroomWidth + washbasin_accessible_TotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             womanRestroomElems.Remove(washbasin_accessible); // 移除修改過的族群
@@ -1589,6 +1601,13 @@ namespace AutoCreateModel
                             ElementTransformUtils.MoveElement(doc, toilet_squat.Id, offset);
                             womanRestroomElems.Remove(toilet_squat); // 移除修改過的族群
                         }
+                        // MRT_高齡使用者坐式馬桶間(SinoBIM-第2版)
+                        if (toilet_advanced_age != null)
+                        {
+                            XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth1, -toilet_advanced_age_TotalDepth, 0);
+                            ElementTransformUtils.MoveElement(doc, toilet_advanced_age.Id, offset);
+                            womanRestroomElems.Remove(toilet_advanced_age); // 移除修改過的族群
+                        }
                         // MRT_拖布盆間(SinoBIM-第2版)
                         if (mop_basin != null)
                         {
@@ -1601,7 +1620,7 @@ namespace AutoCreateModel
                         {
                             if (womanData.Type.Equals(4))
                             {
-                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth1 + washbasin_accessible_TotalWidth, -washbasinTotalDepth1, 0);
+                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth1 + toilet_advanced_age_TotalWidth + wallWidth + washbasin_accessible_TotalWidth, -washbasinTotalDepth1, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
                             }
                             else if (womanData.Type.Equals(5))
@@ -1610,7 +1629,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * 90; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin1.Id, line, rotation);
-                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth1 + washbasinTotalDepth1, -washbasinTotalWidth1, 0);
+                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth1 + toilet_advanced_age_TotalWidth + wallWidth + washbasinTotalDepth1, -washbasinTotalWidth1, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
                             }
                             else if (womanData.Type.Equals(6))
@@ -1619,7 +1638,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * 180; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin1.Id, line, rotation);
-                                XYZ offset = new XYZ(womanRestroomLength - space - washbasin_accessible_TotalWidth, -womanRestroomWidth + washbasinTotalDepth1, 0);
+                                XYZ offset = new XYZ(womanRestroomLength - space - aisle_Length - wallWidth - washbasin_accessible_TotalWidth, -womanRestroomWidth + washbasinTotalDepth1, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
                             }
                             else if (womanData.Type.Equals(7))
@@ -1649,9 +1668,9 @@ namespace AutoCreateModel
                             {
                                 LocationPoint lp = washbasin2.Location as LocationPoint;
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
-                                double rotation = 2 * Math.PI / 360 * 90; // 轉換角度
+                                double rotation = 2 * Math.PI / 360 * -90; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin2.Id, line, rotation);
-                                XYZ offset = new XYZ(womanRestroomLength - space, -washbasin_accessible_TotalWidth - washbasinTotalWidth2, 0);
+                                XYZ offset = new XYZ(womanRestroomLength - space - aisle_Length - wallWidth - washbasinTotalDepth2, -washbasin_accessible_TotalWidth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin2.Id, offset);
                                 womanRestroomElems.Remove(washbasin2); // 移除修改過的族群
                             }
@@ -1661,7 +1680,7 @@ namespace AutoCreateModel
                         {
                             if (womanData.Type.Equals(4))
                             {
-                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth1 + washbasin_accessible_TotalWidth / 2, -washbasin_accessible_TotalDepth, 0);
+                                XYZ offset = new XYZ(mop_basin_TotalWidth + toilet_squat_TotalWidth + toiletTotalWidth1 + toilet_advanced_age_TotalWidth + wallWidth + washbasin_accessible_TotalWidth / 2, -washbasin_accessible_TotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             else if (womanData.Type.Equals(5))
@@ -1670,7 +1689,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * -90; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin_accessible.Id, line, rotation);
-                                XYZ offset = new XYZ(womanRestroomLength - washbasin_accessible_TotalDepth - space, -washbasin_accessible_TotalWidth / 2, 0);
+                                XYZ offset = new XYZ(womanRestroomLength - space - aisle_Length - wallWidth - washbasin_accessible_TotalDepth, -washbasin_accessible_TotalWidth / 2, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             else if (womanData.Type.Equals(6))
@@ -1679,7 +1698,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * 180; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin_accessible.Id, line, rotation);
-                                XYZ offset = new XYZ(womanRestroomLength - space - washbasin_accessible_TotalWidth / 2, -womanRestroomWidth + washbasin_accessible_TotalDepth, 0);
+                                XYZ offset = new XYZ(womanRestroomLength - space - aisle_Length - wallWidth - washbasin_accessible_TotalWidth / 2, -womanRestroomWidth + washbasin_accessible_TotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             else if (womanData.Type.Equals(7))
@@ -1719,6 +1738,13 @@ namespace AutoCreateModel
                             ElementTransformUtils.MoveElement(doc, toilet_squat.Id, offset);
                             womanRestroomElems.Remove(toilet_squat); // 移除修改過的族群
                         }
+                        // MRT_高齡使用者坐式馬桶間(SinoBIM-第2版)
+                        if (toilet_advanced_age != null)
+                        {
+                            XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth1 - toilet_advanced_age_TotalWidth, -toilet_advanced_age_TotalDepth, 0);
+                            ElementTransformUtils.MoveElement(doc, toilet_advanced_age.Id, offset);
+                            womanRestroomElems.Remove(toilet_advanced_age); // 移除修改過的族群
+                        }
                         // MRT_拖布盆間(SinoBIM-第2版)
                         if (mop_basin != null)
                         {
@@ -1731,7 +1757,7 @@ namespace AutoCreateModel
                         {
                             if (womanData.Type.Equals(4))
                             {
-                                XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth1 - washbasin_accessible_TotalWidth - washbasinTotalWidth1, -washbasinTotalDepth1, 0);
+                                XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth1 - toilet_advanced_age_TotalWidth - wallWidth - washbasin_accessible_TotalWidth - washbasinTotalWidth1, -washbasinTotalDepth1, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
                             }
                             else if (womanData.Type.Equals(5))
@@ -1740,7 +1766,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * -90; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin1.Id, line, rotation);
-                                XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth1 - washbasinTotalDepth1, 0, 0);
+                                XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth1 - toilet_advanced_age_TotalWidth - wallWidth - washbasinTotalDepth1, 0, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
                             }
                             else if (womanData.Type.Equals(6))
@@ -1749,7 +1775,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * 180; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin1.Id, line, rotation);
-                                XYZ offset = new XYZ(space + washbasin_accessible_TotalWidth + washbasinTotalWidth1, -womanRestroomWidth + washbasinTotalDepth1, 0);
+                                XYZ offset = new XYZ(space + aisle_Length + wallWidth + washbasin_accessible_TotalWidth + washbasinTotalWidth1, -womanRestroomWidth + washbasinTotalDepth1, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
                             }
                             else if (womanData.Type.Equals(7))
@@ -1772,7 +1798,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * 90; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin2.Id, line, rotation);
-                                XYZ offset = new XYZ(space + washbasinTotalDepth2, -washbasin_accessible_TotalWidth - washbasinTotalWidth2, 0);
+                                XYZ offset = new XYZ(space + aisle_Length + wallWidth + washbasinTotalDepth2, -washbasin_accessible_TotalWidth - washbasinTotalWidth2, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin2.Id, offset);
                                 womanRestroomElems.Remove(washbasin2); // 移除修改過的族群
                             }
@@ -1782,7 +1808,7 @@ namespace AutoCreateModel
                         {
                             if (womanData.Type.Equals(4))
                             {
-                                XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth1 - washbasin_accessible_TotalWidth / 2, -washbasin_accessible_TotalDepth, 0);
+                                XYZ offset = new XYZ(womanRestroomLength - mop_basin_TotalWidth - toilet_squat_TotalWidth - toiletTotalWidth1 - toilet_advanced_age_TotalWidth - wallWidth - washbasin_accessible_TotalWidth / 2, -washbasin_accessible_TotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             else if (womanData.Type.Equals(5))
@@ -1791,7 +1817,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * 90; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin_accessible.Id, line, rotation);
-                                XYZ offset = new XYZ(space + washbasin_accessible_TotalDepth, -washbasin_accessible_TotalWidth / 2, 0);
+                                XYZ offset = new XYZ(space + aisle_Length + wallWidth + washbasin_accessible_TotalDepth, -washbasin_accessible_TotalWidth / 2, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             else if (womanData.Type.Equals(6))
@@ -1800,7 +1826,7 @@ namespace AutoCreateModel
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
                                 double rotation = 2 * Math.PI / 360 * 180; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin_accessible.Id, line, rotation);
-                                XYZ offset = new XYZ(space + washbasin_accessible_TotalWidth / 2, -womanRestroomWidth + washbasin_accessible_TotalDepth, 0);
+                                XYZ offset = new XYZ(space + aisle_Length + wallWidth + washbasin_accessible_TotalWidth / 2, -womanRestroomWidth + washbasin_accessible_TotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             else if (womanData.Type.Equals(7))
