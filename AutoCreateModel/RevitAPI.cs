@@ -9,13 +9,15 @@ namespace AutoCreateModel
 {
     public class RevitAPI : IExternalApplication
     {
-        static string addinAssmeblyPath = Assembly.GetExecutingAssembly().Location;
-        //static string checkPlatformPath = @"C:\ProgramData\Autodesk\Revit\Addins\2018\AutoCreateModel\AutoCreateModel.dll";
+        //static string addinAssmeblyPath = Assembly.GetExecutingAssembly().Location;
+        static string addinAssmeblyPath = @"C:\ProgramData\Autodesk\Revit\Addins\2020\Sino_Station\"; // 封包版路徑位址
         public Result OnStartup(UIControlledApplication a)
         {
+            addinAssmeblyPath = addinAssmeblyPath + "AutoCreateModel.dll";
+
             RibbonPanel ribbonPanel = null;
-            try { a.CreateRibbonTab("自動建模"); } catch { }
-            try { ribbonPanel = a.CreateRibbonPanel("自動建模", "建立廁所"); }
+            try { a.CreateRibbonTab("捷運規範校核"); } catch { }
+            try { ribbonPanel = a.CreateRibbonPanel("捷運規範校核", "自動建模"); }
             catch
             {
                 List<RibbonPanel> panel_list = new List<RibbonPanel>();
@@ -28,9 +30,9 @@ namespace AutoCreateModel
                     }
                 }
             }
-
-            PushButton pushbutton1 = ribbonPanel.AddItem(new PushButtonData("AutoCreateModel", "建立廁所", addinAssmeblyPath, "AutoCreateModel.CreateMRT")) as PushButton;
-            pushbutton1.LargeImage = convertFromBitmap(Properties.Resources.house);
+            // 在面板上添加一個按鈕, 點擊此按鈕觸動AutoCreateModel.CreateMRT
+            PushButton createToiletBtn = ribbonPanel.AddItem(new PushButtonData("AutoCreateModel", "建立廁所", addinAssmeblyPath, "AutoCreateModel.CreateMRT")) as PushButton;
+            createToiletBtn.LargeImage = convertFromBitmap(Properties.Resources.Toilet);
 
             return Result.Succeeded;
         }

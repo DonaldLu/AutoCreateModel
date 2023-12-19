@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace AutoCreateModel
 {
-    internal class FindLevel
+    public class FindLevel
     {
         // Level_id比對樓層
         public static Dictionary<int, string> level_id = new Dictionary<int, string>();
@@ -20,6 +20,7 @@ namespace AutoCreateModel
         public Tuple<List<LevelElevation>, LevelElevation, double> FindDocViewLevel(Document doc)
         {
             // Level_id比對樓層
+            level_id = new Dictionary<int, string>();
             level_id.Add(0, "出入口"); level_id.Add(1, "地面層"); level_id.Add(2, "轉折層"); level_id.Add(3, "穿堂層"); level_id.Add(4, "設備層"); level_id.Add(5, "月台層"); level_id.Add(6, "軌道層");
             // 查詢所有Level的高程並排序
             List<Level> levels = new FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Levels).WhereElementIsNotElementType().Cast<Level>().ToList();
@@ -43,7 +44,7 @@ namespace AutoCreateModel
                                         where x.Level.Id.Equals(doc.ActiveView.GenLevel.Id)
                                         select x).FirstOrDefault();
             int leCount = levelElevList.IndexOf(viewLevel);
-            // 查詢當前樓層與上一樓層的高度, 製作火源高度
+            // 查詢當前樓層與上一樓層的高度
             if (levelElevList.Count >= 2)
             {
                 if (leCount < levelElevList.Count)

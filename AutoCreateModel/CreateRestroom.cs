@@ -3,8 +3,6 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Events;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
-using DocumentFormat.OpenXml.Bibliography;
-using DocumentFormat.OpenXml.Drawing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,6 +30,7 @@ namespace AutoCreateModel
             public static string breastfeeding = "MRT_哺集乳室(SinoBIM-第";
             public static string janitorRoom = "MRT_清潔人員休息室(SinoBIM-第";
         }
+        public List<LevelElevation> levelElevList = new List<LevelElevation>();
         public List<string> noFamilySymbols = new List<string>();
         public double prjNS = 0.0; // 專案基準點：N/S
         public double prjWE = 0.0; // 專案基準點：W/E
@@ -47,7 +46,7 @@ namespace AutoCreateModel
 
             FindLevel findLevel = new FindLevel();
             Tuple<List<LevelElevation>, LevelElevation, double> multiValue = findLevel.FindDocViewLevel(doc);
-            List<LevelElevation> levelElevList = multiValue.Item1; // 全部樓層
+            levelElevList = multiValue.Item1; // 全部樓層
 
             ProjectBasePoint(doc); // 專案基準點
 
@@ -169,12 +168,12 @@ namespace AutoCreateModel
                 }
 
                 double levelElevation = levelElevList[0].Height; // 建立廁所的樓層
-                //manRestrooms = CreateManRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立男廁元件
+                manRestrooms = CreateManRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立男廁元件
                 womanRestrooms = CreateWomanRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立女廁元件
-                //familyRestrooms = CreateFamilyRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立親子廁所元件
-                //accessibleRestrooms = CreateAccessibleRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立無障礙廁所元件
-                //breastfeedings = CreateBreastfeedingRoom(doc, jsonData, levelElevation, familySymbolList); // 建立哺集乳室
-                //janitorRooms = CreateJanitorRoom(doc, jsonData, levelElevation, familySymbolList); // 建立清潔人員休息室
+                familyRestrooms = CreateFamilyRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立親子廁所元件
+                accessibleRestrooms = CreateAccessibleRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立無障礙廁所元件
+                breastfeedings = CreateBreastfeedingRoom(doc, jsonData, levelElevation, familySymbolList); // 建立哺集乳室
+                janitorRooms = CreateJanitorRoom(doc, jsonData, levelElevation, familySymbolList); // 建立清潔人員休息室
                 trans.Commit();
             }
 
@@ -193,13 +192,14 @@ namespace AutoCreateModel
             FamilySymbol urinal = familySymbolList.Where(x => x.FamilyName.Contains(RestroomGroup.urinal)).FirstOrDefault(); // 小便斗
 
             foreach (ManData manData in jsonData.ManDataList)
-            {
+            {               
                 double x = UnitUtils.ConvertToInternalUnits(manData.RestroomMan_x, DisplayUnitType.DUT_METERS);
                 double y = UnitUtils.ConvertToInternalUnits(manData.RestroomMan_y, DisplayUnitType.DUT_METERS);
 
                 // Level_id要建置的樓層
                 string value = string.Empty;
                 FindLevel.level_id.TryGetValue(manData.Level_id, out value);
+                levelElevation = levelElevList.Where(l => l.Name.Contains(value)).FirstOrDefault().Height;
                 XYZ xyz = new XYZ(x, y, levelElevation);
 
                 // 廁間擺放原則：廁間數2/3坐式、1/3蹲式，除不盡以坐式為主；要有高齡者坐式馬桶(算坐式的)
@@ -363,6 +363,11 @@ namespace AutoCreateModel
             {
                 double x = UnitUtils.ConvertToInternalUnits(womanData.RestroomWoman_x, DisplayUnitType.DUT_METERS);
                 double y = UnitUtils.ConvertToInternalUnits(womanData.RestroomWoman_y, DisplayUnitType.DUT_METERS);
+
+                // Level_id要建置的樓層
+                string value = string.Empty;
+                FindLevel.level_id.TryGetValue(womanData.Level_id, out value);
+                levelElevation = levelElevList.Where(l => l.Name.Contains(value)).FirstOrDefault().Height;
                 XYZ xyz = new XYZ(x, y, levelElevation);
 
                 // 廁間擺放原則：廁間數2/3坐式、1/3蹲式，除不盡以坐式為主；要有高齡者坐式馬桶(算坐式的)
@@ -548,7 +553,13 @@ namespace AutoCreateModel
             {
                 double x = UnitUtils.ConvertToInternalUnits(familyData.RestroomFamily_x, DisplayUnitType.DUT_METERS);
                 double y = UnitUtils.ConvertToInternalUnits(familyData.RestroomFamily_y, DisplayUnitType.DUT_METERS);
+
+                // Level_id要建置的樓層
+                string value = string.Empty;
+                FindLevel.level_id.TryGetValue(familyData.Level_id, out value);
+                levelElevation = levelElevList.Where(l => l.Name.Contains(value)).FirstOrDefault().Height;
                 XYZ xyz = new XYZ(x, y, levelElevation);
+
                 if (toilet != null)
                 {
                     FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, toilet, StructuralType.NonStructural);
@@ -572,7 +583,13 @@ namespace AutoCreateModel
             {
                 double x = UnitUtils.ConvertToInternalUnits(accessibleData.RestroomAccessible_x, DisplayUnitType.DUT_METERS);
                 double y = UnitUtils.ConvertToInternalUnits(accessibleData.RestroomAccessible_y, DisplayUnitType.DUT_METERS);
+
+                // Level_id要建置的樓層
+                string value = string.Empty;
+                FindLevel.level_id.TryGetValue(accessibleData.Level_id, out value);
+                levelElevation = levelElevList.Where(l => l.Name.Contains(value)).FirstOrDefault().Height;
                 XYZ xyz = new XYZ(x, y, levelElevation);
+
                 if (toilet != null)
                 {
                     FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, toilet, StructuralType.NonStructural);
@@ -596,7 +613,13 @@ namespace AutoCreateModel
             {
                 double x = UnitUtils.ConvertToInternalUnits(breastfeedingData.BreastfeedingRoom_x, DisplayUnitType.DUT_METERS);
                 double y = UnitUtils.ConvertToInternalUnits(breastfeedingData.BreastfeedingRoom_y, DisplayUnitType.DUT_METERS);
+
+                // Level_id要建置的樓層
+                string value = string.Empty;
+                FindLevel.level_id.TryGetValue(breastfeedingData.Level_id, out value);
+                levelElevation = levelElevList.Where(l => l.Name.Contains(value)).FirstOrDefault().Height;
                 XYZ xyz = new XYZ(x, y, levelElevation);
+
                 if (toilet != null)
                 {
                     FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, toilet, StructuralType.NonStructural);
@@ -620,7 +643,13 @@ namespace AutoCreateModel
             {
                 double x = UnitUtils.ConvertToInternalUnits(janitorRoomData.JanitorRoom_x, DisplayUnitType.DUT_METERS);
                 double y = UnitUtils.ConvertToInternalUnits(janitorRoomData.JanitorRoom_y, DisplayUnitType.DUT_METERS);
+
+                // Level_id要建置的樓層
+                string value = string.Empty;
+                FindLevel.level_id.TryGetValue(janitorRoomData.Level_id, out value);
+                levelElevation = levelElevList.Where(l => l.Name.Contains(value)).FirstOrDefault().Height;
                 XYZ xyz = new XYZ(x, y, levelElevation);
+
                 if (toilet != null)
                 {
                     FamilyInstance instance = doc.Create.NewFamilyInstance(xyz, toilet, StructuralType.NonStructural);
@@ -747,7 +776,7 @@ namespace AutoCreateModel
                 double manRestroomLength = UnitUtils.ConvertToInternalUnits(manData.Length + manData.Aisle_Length, DisplayUnitType.DUT_METERS); // 廁所總長度
                 double manRestroomWidth = UnitUtils.ConvertToInternalUnits(manData.Width + manData.Aisle_Width - 1.5, DisplayUnitType.DUT_METERS); // 廁所總寬度
                 double aisle_Length = UnitUtils.ConvertToInternalUnits(manData.Aisle_Length, DisplayUnitType.DUT_METERS); // 走道增加長度間距
-                double aisle_Width = UnitUtils.ConvertToInternalUnits(manData.Aisle_Width, DisplayUnitType.DUT_METERS); // 走道增加寬度間距
+                double aisle_Width = UnitUtils.ConvertToInternalUnits(manData.Aisle_Width - 1.5, DisplayUnitType.DUT_METERS); // 走道增加寬度間距
                 double space = UnitUtils.ConvertToInternalUnits(1.5, DisplayUnitType.DUT_METERS); // 預設間距
 
                 if (manData.Type.Equals(1) || manData.Type.Equals(2) || manData.Type.Equals(3))
@@ -1307,10 +1336,10 @@ namespace AutoCreateModel
                     washbasin_accessible_TotalDepth = washbasin_accessible.LookupParameter("設備箱深度").AsDouble();
                 }
 
-                double womanRestroomLength = UnitUtils.ConvertToInternalUnits(womanData.Length, DisplayUnitType.DUT_METERS); // 廁所總長度
-                double womanRestroomWidth = UnitUtils.ConvertToInternalUnits(womanData.Width, DisplayUnitType.DUT_METERS); // 廁所總寬度
+                double womanRestroomLength = UnitUtils.ConvertToInternalUnits(womanData.Length + womanData.Aisle_Length, DisplayUnitType.DUT_METERS); // 廁所總長度
+                double womanRestroomWidth = UnitUtils.ConvertToInternalUnits(womanData.Width + womanData.Aisle_Width - 1.5, DisplayUnitType.DUT_METERS); // 廁所總寬度
                 double aisle_Length = UnitUtils.ConvertToInternalUnits(womanData.Aisle_Length, DisplayUnitType.DUT_METERS); // 走道增加長度間距
-                double aisle_Width = UnitUtils.ConvertToInternalUnits(womanData.Aisle_Width, DisplayUnitType.DUT_METERS); // 走道增加寬度間距
+                double aisle_Width = UnitUtils.ConvertToInternalUnits(womanData.Aisle_Width - 1.5, DisplayUnitType.DUT_METERS); // 走道增加寬度間距
                 double space = UnitUtils.ConvertToInternalUnits(1.5, DisplayUnitType.DUT_METERS); // 間距
 
                 if (womanData.Type.Equals(1) || womanData.Type.Equals(2) || womanData.Type.Equals(3) || womanData.Type.Equals(8))
@@ -1656,7 +1685,7 @@ namespace AutoCreateModel
                                 {
                                     washbasinPlace = womanRestroomLength / 2 - washbasinNormalWidth1 / washbasinNormalCount1; 
                                 }
-                                XYZ offset = new XYZ(washbasinPlace, -womanRestroomWidth + washbasinTotalDepth1 + space, 0);
+                                XYZ offset = new XYZ(washbasinPlace, -womanRestroomWidth + space + aisle_Width + wallWidth + washbasinTotalDepth1, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
                             }
                             womanRestroomElems.Remove(washbasin1); // 移除修改過的族群
@@ -1716,7 +1745,7 @@ namespace AutoCreateModel
                                 {
                                     washbasin_accessible_place = womanRestroomLength / 2 - washbasinNormalWidth1 / washbasinNormalCount1 + washbasin_accessible_TotalWidth / 2;
                                 }
-                                XYZ offset = new XYZ(washbasin_accessible_place, -womanRestroomWidth + washbasin_accessible_TotalDepth + space, 0);
+                                XYZ offset = new XYZ(washbasin_accessible_place, -womanRestroomWidth + space + aisle_Width + wallWidth + washbasin_accessible_TotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             womanRestroomElems.Remove(washbasin_accessible); // 移除修改過的族群
@@ -1782,9 +1811,18 @@ namespace AutoCreateModel
                             {
                                 LocationPoint lp = washbasin1.Location as LocationPoint;
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
-                                double rotation = 2 * Math.PI / 360 * 90; // 轉換角度
+                                double rotation = 2 * Math.PI / 360 * 180; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin1.Id, line, rotation);
-                                XYZ offset = new XYZ(toilet_squat_TotalWidth + toiletTotalWidth1 + washbasinTotalDepth1, -washbasinTotalWidth1, 0);
+                                double washbasinPlace = 0.0;
+                                if (womanData.Rotate_id.Equals(3))
+                                {
+                                    washbasinPlace = womanRestroomLength / 2 + washbasinNormalWidth1 / washbasinNormalCount1;
+                                }
+                                else if (womanData.Rotate_id.Equals(4))
+                                {
+                                    washbasinPlace = womanRestroomLength / 2 - washbasinNormalWidth1 / washbasinNormalCount1;
+                                }
+                                XYZ offset = new XYZ(washbasinPlace, -womanRestroomWidth + space + aisle_Width + wallWidth + washbasinTotalDepth1, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin1.Id, offset);
                             }
                             womanRestroomElems.Remove(washbasin1); // 移除修改過的族群
@@ -1833,9 +1871,18 @@ namespace AutoCreateModel
                             {
                                 LocationPoint lp = washbasin_accessible.Location as LocationPoint;
                                 Line line = Line.CreateBound(lp.Point, new XYZ(lp.Point.X, lp.Point.Y, lp.Point.Z + 10));
-                                double rotation = 2 * Math.PI / 360 * -90; // 轉換角度
+                                double rotation = 2 * Math.PI / 360 * 180; // 轉換角度
                                 ElementTransformUtils.RotateElement(doc, washbasin_accessible.Id, line, rotation);
-                                XYZ offset = new XYZ(womanRestroomLength - washbasin_accessible_TotalDepth, -washbasin_accessible_TotalWidth / 2, 0);
+                                double washbasin_accessible_place = 0.0;
+                                if (womanData.Rotate_id.Equals(3))
+                                {
+                                    washbasin_accessible_place = womanRestroomLength / 2 + washbasinNormalWidth1 / washbasinNormalCount1 - washbasinTotalWidth1 - washbasin_accessible_TotalWidth / 2;
+                                }
+                                else if (womanData.Rotate_id.Equals(4))
+                                {
+                                    washbasin_accessible_place = womanRestroomLength / 2 - washbasinNormalWidth1 / washbasinNormalCount1 + washbasin_accessible_TotalWidth / 2;
+                                }
+                                XYZ offset = new XYZ(washbasin_accessible_place, -womanRestroomWidth + space + aisle_Width + wallWidth + washbasin_accessible_TotalDepth, 0);
                                 ElementTransformUtils.MoveElement(doc, washbasin_accessible.Id, offset);
                             }
                             womanRestroomElems.Remove(washbasin_accessible); // 移除修改過的族群

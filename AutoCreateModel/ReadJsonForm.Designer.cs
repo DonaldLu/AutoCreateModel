@@ -58,7 +58,7 @@
             // sureBtn
             // 
             this.sureBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.sureBtn.Location = new System.Drawing.Point(13, 144);
+            this.sureBtn.Location = new System.Drawing.Point(13, 175);
             this.sureBtn.Name = "sureBtn";
             this.sureBtn.Size = new System.Drawing.Size(75, 34);
             this.sureBtn.TabIndex = 2;
@@ -69,7 +69,7 @@
             // cancelBtn
             // 
             this.cancelBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.cancelBtn.Location = new System.Drawing.Point(139, 144);
+            this.cancelBtn.Location = new System.Drawing.Point(187, 175);
             this.cancelBtn.Name = "cancelBtn";
             this.cancelBtn.Size = new System.Drawing.Size(75, 34);
             this.cancelBtn.TabIndex = 2;
@@ -81,7 +81,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(226, 190);
+            this.ClientSize = new System.Drawing.Size(274, 221);
             this.Controls.Add(this.cancelBtn);
             this.Controls.Add(this.sureBtn);
             this.Controls.Add(this.label1);
@@ -89,6 +89,8 @@
             this.Font = new System.Drawing.Font("微軟正黑體", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(136)));
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(4);
+            this.MaximumSize = new System.Drawing.Size(290, 260);
+            this.MinimumSize = new System.Drawing.Size(290, 260);
             this.Name = "ReadJsonForm";
             this.Text = "請選擇Json檔";
             this.ResumeLayout(false);

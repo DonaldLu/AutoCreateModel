@@ -8,7 +8,8 @@ namespace AutoCreateModel
     public partial class ReadJsonForm : Form
     {
         ExternalEvent externalEvent_CreateToilet;
-        public static string folderPath = @"C:\Prj\Revit\AutoCreateModel\AutoCreateModel\json"; // Json路徑
+        //public static string folderPath = @"C:\Prj\Revit\AutoCreateModel\AutoCreateModel\json"; // Json路徑
+        public static string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);//桌面路徑
         public ReadJsonForm(UIApplication uiapp, RevitDocument m_connect, IExternalEventHandler handler_CreateToilet)
         {
             InitializeComponent();
@@ -20,7 +21,7 @@ namespace AutoCreateModel
         {
             // 彈跳視窗選擇Json資料夾
             FolderBrowserDialog path = new FolderBrowserDialog();
-            path.SelectedPath = @"C:\Prj\Revit\AutoCreateModel\AutoCreateModel\json";
+            //path.SelectedPath = @"C:\Prj\Revit\AutoCreateModel\AutoCreateModel\json";
             path.ShowDialog();
             this.label1.Text = path.SelectedPath;
             folderPath = path.SelectedPath;
