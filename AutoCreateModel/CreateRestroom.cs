@@ -169,11 +169,11 @@ namespace AutoCreateModel
 
                 double levelElevation = levelElevList[0].Height; // 建立廁所的樓層
                 manRestrooms = CreateManRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立男廁元件
-                womanRestrooms = CreateWomanRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立女廁元件
-                familyRestrooms = CreateFamilyRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立親子廁所元件
-                accessibleRestrooms = CreateAccessibleRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立無障礙廁所元件
-                breastfeedings = CreateBreastfeedingRoom(doc, jsonData, levelElevation, familySymbolList); // 建立哺集乳室
-                janitorRooms = CreateJanitorRoom(doc, jsonData, levelElevation, familySymbolList); // 建立清潔人員休息室
+                //womanRestrooms = CreateWomanRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立女廁元件
+                //familyRestrooms = CreateFamilyRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立親子廁所元件
+                //accessibleRestrooms = CreateAccessibleRestroom(doc, jsonData, levelElevation, familySymbolList); // 建立無障礙廁所元件
+                //breastfeedings = CreateBreastfeedingRoom(doc, jsonData, levelElevation, familySymbolList); // 建立哺集乳室
+                //janitorRooms = CreateJanitorRoom(doc, jsonData, levelElevation, familySymbolList); // 建立清潔人員休息室
                 trans.Commit();
             }
 
@@ -193,14 +193,31 @@ namespace AutoCreateModel
 
             foreach (ManData manData in jsonData.ManDataList)
             {               
-                double x = UnitUtils.ConvertToInternalUnits(manData.RestroomMan_x, DisplayUnitType.DUT_METERS);
-                double y = UnitUtils.ConvertToInternalUnits(manData.RestroomMan_y, DisplayUnitType.DUT_METERS);
+                double x = manData.RestroomMan_x;
+                double y = manData.RestroomMan_y;
+
+                double manRestroomLength = UnitUtils.ConvertToInternalUnits(manData.Length + manData.Aisle_Length, DisplayUnitType.DUT_METERS); // 廁所總長度
+                double manRestroomWidth = UnitUtils.ConvertToInternalUnits(manData.Width + manData.Aisle_Width - 1.5, DisplayUnitType.DUT_METERS); // 廁所總寬度
+                double aisle_Length = UnitUtils.ConvertToInternalUnits(manData.Aisle_Length, DisplayUnitType.DUT_METERS); // 走道增加長度間距
+                double aisle_Width = UnitUtils.ConvertToInternalUnits(manData.Aisle_Width - 1.5, DisplayUnitType.DUT_METERS); // 走道增加寬度間距
+                double space = UnitUtils.ConvertToInternalUnits(1.5, DisplayUnitType.DUT_METERS); // 預設間距
 
                 // Level_id要建置的樓層
                 string value = string.Empty;
                 FindLevel.level_id.TryGetValue(manData.Level_id, out value);
                 levelElevation = levelElevList.Where(l => l.Name.Contains(value)).FirstOrDefault().Height;
                 XYZ xyz = new XYZ(x, y, levelElevation);
+
+                // 建立牆 <-- 測試寫建立出男廁的空間
+                ElementId levelId = levelElevList.Where(l => l.Name.Contains(value)).FirstOrDefault().Level.Id;
+                XYZ start = new XYZ(manData.RestroomMan_x - wallWidth / 2, manData.RestroomMan_y + wallWidth / 2, levelElevation);
+                XYZ point1 = new XYZ(start.X + manRestroomLength + wallWidth, start.Y, levelElevation);
+                XYZ point2 = new XYZ(start.X + manRestroomLength + wallWidth, start.Y - manRestroomWidth - wallWidth, levelElevation);
+                XYZ point3 = new XYZ(start.X, start.Y - manRestroomWidth - wallWidth, levelElevation);
+                Wall.Create(doc, Line.CreateBound(start, point1), levelId, true);
+                Wall.Create(doc, Line.CreateBound(point1, point2), levelId, true);
+                Wall.Create(doc, Line.CreateBound(point2, point3), levelId, true);
+                Wall.Create(doc, Line.CreateBound(point3, start), levelId, true);
 
                 // 廁間擺放原則：廁間數2/3坐式、1/3蹲式，除不盡以坐式為主；要有高齡者坐式馬桶(算坐式的)
                 double toiletCount = manData.Toilet_Count; // 廁間數量
@@ -361,8 +378,8 @@ namespace AutoCreateModel
 
             foreach (WomanData womanData in jsonData.WomanDataList)
             {
-                double x = UnitUtils.ConvertToInternalUnits(womanData.RestroomWoman_x, DisplayUnitType.DUT_METERS);
-                double y = UnitUtils.ConvertToInternalUnits(womanData.RestroomWoman_y, DisplayUnitType.DUT_METERS);
+                double x = womanData.RestroomWoman_x;
+                double y = womanData.RestroomWoman_y;
 
                 // Level_id要建置的樓層
                 string value = string.Empty;
@@ -551,8 +568,8 @@ namespace AutoCreateModel
 
             foreach (FamilyData familyData in jsonData.FamilyDataList)
             {
-                double x = UnitUtils.ConvertToInternalUnits(familyData.RestroomFamily_x, DisplayUnitType.DUT_METERS);
-                double y = UnitUtils.ConvertToInternalUnits(familyData.RestroomFamily_y, DisplayUnitType.DUT_METERS);
+                double x = familyData.RestroomFamily_x;
+                double y = familyData.RestroomFamily_y;
 
                 // Level_id要建置的樓層
                 string value = string.Empty;
@@ -581,8 +598,8 @@ namespace AutoCreateModel
 
             foreach (AccessibleData accessibleData in jsonData.AccessibleDataList)
             {
-                double x = UnitUtils.ConvertToInternalUnits(accessibleData.RestroomAccessible_x, DisplayUnitType.DUT_METERS);
-                double y = UnitUtils.ConvertToInternalUnits(accessibleData.RestroomAccessible_y, DisplayUnitType.DUT_METERS);
+                double x = accessibleData.RestroomAccessible_x;
+                double y = accessibleData.RestroomAccessible_y;
 
                 // Level_id要建置的樓層
                 string value = string.Empty;
@@ -611,8 +628,8 @@ namespace AutoCreateModel
 
             foreach (BreastfeedingData breastfeedingData in jsonData.BreastfeedingDataList)
             {
-                double x = UnitUtils.ConvertToInternalUnits(breastfeedingData.BreastfeedingRoom_x, DisplayUnitType.DUT_METERS);
-                double y = UnitUtils.ConvertToInternalUnits(breastfeedingData.BreastfeedingRoom_y, DisplayUnitType.DUT_METERS);
+                double x = breastfeedingData.BreastfeedingRoom_x;
+                double y = breastfeedingData.BreastfeedingRoom_y;
 
                 // Level_id要建置的樓層
                 string value = string.Empty;
@@ -641,8 +658,8 @@ namespace AutoCreateModel
 
             foreach (JanitorRoomData janitorRoomData in jsonData.JanitorRoomDataList)
             {
-                double x = UnitUtils.ConvertToInternalUnits(janitorRoomData.JanitorRoom_x, DisplayUnitType.DUT_METERS);
-                double y = UnitUtils.ConvertToInternalUnits(janitorRoomData.JanitorRoom_y, DisplayUnitType.DUT_METERS);
+                double x = janitorRoomData.JanitorRoom_x;
+                double y = janitorRoomData.JanitorRoom_y;
 
                 // Level_id要建置的樓層
                 string value = string.Empty;
